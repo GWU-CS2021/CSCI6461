@@ -93,7 +93,7 @@ enter address into PC and press Single Step switch to execute the instruction at
 指的是执行一条指令，而不是最小的一个单元，比如ALU执行
 
 Binary python最好的表现方式？ ->冠宇
-•	16-bit words-> int+ validate -> word.binary() （page20 ProjectDescription)
+•	16-bit words-> int+ validate -> word.binary() （page4 ProjectDescription)
 
 确定circle具体形式 -> 若佳
 
