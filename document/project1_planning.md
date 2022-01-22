@@ -91,11 +91,20 @@ end
 singlestep具体含义？-> 若佳
 
 Binary python最好的表现方式？ ->冠宇
+•	16-bit words-> int+ validate -> word.binary() （page20 ProjectDescription)
 
 确定circle具体形式 -> 若佳
+enter address into PC and press Single Step switch to execute the instruction at that address.（page20 ProjectDescription)
+指的是执行一条指令，而不是最小的一个单元，比如ALU执行
 
 前端架子 -> Alan，zhengyi
 
+
+# More TODO
+You will need some other registers in your simulator. I am not going to tell you what they are; you must decide what they are, name them, and specify their function in your documentation.
+预留一部分寄存器，maybe for float，string，Assume characters are represented in ASCII. 
+
+Memeory start at 6，0-5 reserved
 
 
 
