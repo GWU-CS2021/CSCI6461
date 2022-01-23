@@ -1,6 +1,8 @@
 import datetime
 import logging
 
+from Memory import Memory
+
 
 def main():
     loggers = logging.getLogger('root')
