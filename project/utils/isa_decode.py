@@ -1,3 +1,5 @@
+# TODO
+# This can be init in CPU constants.
 memory_size = 12
 bit_size = 16
 pc_max = memory_size

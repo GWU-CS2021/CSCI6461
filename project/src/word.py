@@ -1,4 +1,5 @@
-# Word, basic datastructures of the simulator, check value length here, check upon assignment to register
+# Word, basic datastructures of the simulator, check value length here, check upon assignment to register.
+
 class Word(int):
     value = 0
 

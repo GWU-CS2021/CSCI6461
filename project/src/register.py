@@ -19,7 +19,9 @@ class Register:
             raise TypeError("value %d exceeded the register limit", value)
         self.value = value
 
-
+# TODO
+# Decide how to initialize register.
+# Design methods for register.
 '''
     def get(self):
         return self.value

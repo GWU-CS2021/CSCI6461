@@ -15,6 +15,9 @@ class Memory:
             return False
         return True
 
+# TODO
+# How to design the methods for store and load.
+
     def store(self, address, value):
         if not isinstance(value, Word):
             raise TypeError("value must be set to Word type")

@@ -24,6 +24,7 @@ def main():
     # init gui
     # init machine
     # ready
+    # Design the init of simulator.
 
 
 if __name__ == '__main__':
