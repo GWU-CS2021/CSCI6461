@@ -2,7 +2,7 @@
 
 # DDL
 - Term Paper Topic Due 1/18
-- Project Part 1 Due Midnight 1/30
+- Project Part 1 Due Midnight ~~1/30~~ 02/06
 - Project Part 2 Due Midnight  3/5
 - Term Paper Due Midnight 3/26
 - Project Part 3 Due Midnight  4/2
