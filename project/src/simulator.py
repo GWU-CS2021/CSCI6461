@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from Memory import Memory
+from memory import Memory
 
 
 def main():
@@ -13,7 +13,7 @@ def main():
     logger_handler.setLevel(logging.DEBUG)
 
     # Create a Formatter for formatting the log messages
-    logger_formatter = logging.Formatter('%(asctime)s - %(module)s - %(levelname)s - %(message)s')
+    logger_formatter = logging.Formatter('[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s')
 
     # Add the Formatter to the Handler
     logger_handler.setFormatter(logger_formatter)
