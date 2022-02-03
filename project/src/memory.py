@@ -1,5 +1,5 @@
 import os
-
+from .mfr import *
 from .word import Word
 # from constants import memory_size
 memory_start = 10
@@ -34,7 +34,7 @@ class Memory:
         if not isinstance(address, Word):
             raise TypeError("address must be set to Word type")
         if not self.validate_addr(address):
-            raise TypeError("memory address %d overflow", address)
+            raise MemOverflowErr("memory address %d overflow" % address)
         self.memory[address] = value
 
     def store_reserved(self,target,value):
@@ -42,12 +42,12 @@ class Memory:
         if not target in target_addr_map:
             raise MemoryError("reserved target %s doesn't exist", target)
         if not isinstance(value, Word):
-            raise TypeError("value must be set to Word type")
+            raise MemReserveErr("value must be set to Word type")
         self.memory[target_addr_map[target]]=value
 
     def load(self, address):
         if not self.validate_addr(address):
-            raise TypeError("memory address %d overflow", address)
+            raise MemOverflowErr("memory address %d overflow", address)
         return self.memory[address]
 
     def init_program(self, file_path):

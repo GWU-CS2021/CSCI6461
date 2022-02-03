@@ -6,6 +6,7 @@ from .constants import *
 from .register import Register
 from .word import Word
 from .memory import Memory
+from .mfr import *
 
 
 class CPU:
@@ -22,36 +23,55 @@ class CPU:
         self.ir = Register(ir_max)
         self.halt_signal = 0
 
-
     def run(self):
         while self.halt_signal == 0:
             self.run_single_cycle()
 
+    # TODO this part will be refactored when implementing pipeline
     def run_single_cycle(self):
-        self.halt_signal = 0
-        # MAR <- PC
-        self.mar.set(self.pc.get())
+        try:
+            self.halt_signal = 0
+            # MAR <- PC
+            self.mar.set(self.pc.get())
 
-        # MBR <- MEM[MAR]
-        self.mbr.set(self.memory.memory[self.mar.get()])
+            # MBR <- MEM[MAR]
+            self.mbr.set(self.memory.memory[self.mar.get()])
 
-        # IR <- MBR
-        self.ir.set(self.mbr.get())
+            # IR <- MBR
+            self.ir.set(self.mbr.get())
 
-        # parse and run
-        # Locate and fetch operand data
-        # Execute the operation
-        # Deposit Results
-        self._get_func_by_op()()
+            # parse and run
+            # Locate and fetch operand data
+            # Execute the operation
+            # Deposit Results
+            self._get_func_by_op()()
 
-        # exit on halt
-        if self.halt_signal == 1:
-            return
+            # exit on halt
+            if self.halt_signal == 1:
+                return
 
+            # PC++
+            self.pc.add(1)
+        # TODO mfr will be implemented in phase3
+        except MemReserveErr as e:
+            logging.error("MemReserveErr %s" % (e))
+            # self.mfr = mapping_mfr_value[mfr_mem_reserve]
+            pass
+        except TrapErr as e:
+            logging.error("TrapErr %s" % (e))
+            # self.mfr = mapping_mfr_value[mfr_trap]
+            pass
+        except OpCodeErr as e:
+            logging.error("OpCodeErr %s" % (e))
+            # self.mfr = mapping_mfr_value[mfr_op_code]
+            pass
+        except MemOverflowErr as e:
+            logging.error("MemOverflowErr %s" % (e))
+            # self.mfr = mapping_mfr_value[mfr_mem_overflow]
+            pass
+        except Exception as e:
+            logging.error(e)
 
-
-        # PC++
-        self.pc.add(1)
 
 
     def get_all_reg(self):
@@ -79,11 +99,11 @@ class CPU:
             "03": self._lda,
             "41": self._lda,
             "42": self._ldx,
-
         }
         #opcode from binary string to oct string
         op_oct = format(int(op,2), "02o")
-
+        if op_oct not in mapping_op_function:
+            raise OpCodeErr("illegal opcode %s" % op_oct)
         return mapping_op_function[op_oct]
 
     # ix,i,addr input should all be binary string here
