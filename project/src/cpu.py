@@ -72,7 +72,11 @@ class CPU:
         except Exception as e:
             logging.error(e)
 
+    def store(self):
+        self.memory.store(self.mar, self.mbr)
 
+    def load(self):
+        self.mbr.set(self.memory.load(self.mar))
 
     def get_all_reg(self):
         return {"pc":self.pc.get().convert_to_binary(),
