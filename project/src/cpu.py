@@ -2,7 +2,6 @@
 # Design CPU architecture for phase 1.
 import logging
 
-from .constants import *
 from .register import Register
 from .word import Word
 from .memory import Memory
@@ -10,7 +9,7 @@ from .mfr import *
 
 
 class CPU:
-    def __init__(self,memory=Memory(2048)):
+    def __init__(self, memory=Memory(2048)):
         self.logger = logging.getLogger("root")
         self.memory = memory
         self.pc = Register(pc_max)
@@ -73,36 +72,44 @@ class CPU:
             logging.error(e)
 
     def store(self):
-        self.memory.store(self.mar, self.mbr)
+        self.memory.store(self.mar.get(), self.mbr.get())
+        logging.info("put" + self.mbr.get().convert_to_binary() + "to" + self.mar.get().convert_to_binary())
+
+    def store_plus(self):
+        self.memory.store(self.mar.get(), self.mbr.get())
+        self.mar.add(1)
 
     def load(self):
-        self.mbr.set(self.memory.load(self.mar))
+        self.mbr.set(self.memory.load(self.mar.get()))
+
 
     def get_all_reg(self):
-        return {"pc":self.pc.get().convert_to_binary(),
-                "mar":self.mar.get().convert_to_binary(),
-                "mbr":self.mbr.get().convert_to_binary(),
-                "gpr0":self.gpr[0].get().convert_to_binary(),
-                "gpr1": self.gpr[1].get().convert_to_binary(),
-                "gpr2": self.gpr[2].get().convert_to_binary(),
-                "gpr3": self.gpr[3].get().convert_to_binary(),
-                "ixr1": self.ixr[1].get().convert_to_binary(),
-                "ixr2": self.ixr[2].get().convert_to_binary(),
-                "ixr3": self.ixr[3].get().convert_to_binary(),
+        return {"PC": self.pc.get().convert_to_binary(),
+                "MAR": self.mar.get().convert_to_binary(),
+                "MBR": self.mbr.get().convert_to_binary(),
+                "GPR0": self.gpr[0].get().convert_to_binary(),
+                "GPR1": self.gpr[1].get().convert_to_binary(),
+                "GPR2": self.gpr[2].get().convert_to_binary(),
+                "GPR3": self.gpr[3].get().convert_to_binary(),
+                "IXR1": self.ixr[1].get().convert_to_binary(),
+                "IXR2": self.ixr[2].get().convert_to_binary(),
+                "IXR3": self.ixr[3].get().convert_to_binary(),
                 "cc": self.cc.get().convert_to_binary(),
-                "mfr": self.mfr.get().convert_to_binary(),
-                "ir": self.ir.get().convert_to_binary(),
+                "MFR": self.mfr.get().convert_to_binary(),
+                "IR": self.ir.get().convert_to_binary(),
                 }
 
     def _get_func_by_op(self):
         op = self.ir.get().get_op_code()
+        # opcode from binary string to oct string
+        op_oct = format(int(op, 2), "02o")
         mapping_op_function = {
             "00": self._hlt,
             "01": self._ldr,
             "02": self._str,
             "03": self._lda,
-            "41": self._lda,
-            "42": self._ldx,
+            "41": self._ldx,
+            "42": self._stx,
         }
         #opcode from binary string to oct string
         op_oct = format(int(op,2), "02o")
@@ -111,9 +118,9 @@ class CPU:
         return mapping_op_function[op_oct]
 
     # ix,i,addr input should all be binary string here
-    def _get_effective_address(self,ix,i,addr):
-        ix_int = int(ix,2)
-        addr_int = int(addr,2)
+    def _get_effective_address(self, ix, i, addr):
+        ix_int = int(ix, 2)
+        addr_int = int(addr, 2)
         addr_result = self.memory.load(Word(addr_int))
         if ix_int > 0:
             addr_result = Word(addr_result + self.ixr[ix_int].get())
@@ -122,6 +129,8 @@ class CPU:
         return addr_result
 
     # functions below is to match each and every opcode
+    # Should we put all the instruction code separately here?
+    # Or we can use switch case to declare different scene.
     # halt
     def _hlt(self):
         logging.debug("")
@@ -131,11 +140,10 @@ class CPU:
     # LOAD/STORE
     def _ldr(self):
         logging.debug("")
-        r,ix,i,addr = self.ir.get().parse_as_load_store_cmd()
-        effective_addr = self._get_effective_address(ix,i,addr)
-        # TODO what if register is not empty?
+        r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
+        effective_addr = self._get_effective_address(ix, i, addr)
         # TODO what cache policy should apply?
-        logging.debug("ldr %s,%s,%s[%s] %s:%s" %(r, ix, addr,i, "effective:", effective_addr))
+        logging.debug("ldr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
         self.gpr[int(r, 2)].set(self.memory.load(effective_addr))
         return
 
@@ -143,9 +151,8 @@ class CPU:
         logging.debug("")
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        # TODO what if register is not empty?
         # TODO what cache policy should apply?
-        logging.debug("str %s,%s,%s[%s] %s:%s" %(r, ix, addr,i, "effective:", effective_addr))
+        logging.debug("str %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
         self.memory.store(effective_addr, self.gpr[int(r, 2)].get())
         return
 
@@ -154,7 +161,7 @@ class CPU:
         logging.debug("")
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        logging.debug("lda %s,%s,%s[%s] %s:%s" %(r, ix, addr,i, "effective:", effective_addr))
+        logging.debug("lda %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
         self.gpr[int(r, 2)].set(effective_addr)
         return
 
@@ -165,19 +172,17 @@ class CPU:
         # raise error for x=0
         if ix == "00":
             raise MemoryError("trying to ldx with ix == 00")
-        logging.debug("ldx %s,%s[%s] %s:%s" %(ix, addr,i, "effective:", effective_addr))
+        logging.debug("ldx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
         self.ixr[int(ix, 2)].set(self.memory.load(effective_addr))
         return
 
-    def _stx(self):
+    def _stx(self, code):
         logging.debug("")
         _, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        # TODO what if register is not empty?
         # TODO what cache policy should apply?
         if ix == "00":
             raise MemoryError("trying to stx with ix == 00")
-        logging.debug("stx %s,%s[%s] %s:%s" %(ix, addr,i, "effective:", effective_addr))
+        logging.debug("stx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
         self.memory.store(effective_addr, self.ixr[int(ix, 2)].get())
         return
-
