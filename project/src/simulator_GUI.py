@@ -1,17 +1,17 @@
 import sys
 import traceback
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
-    QPushButton, QPlainTextEdit
+    QPushButton
 )
 
-from simulator.CSCI6461.project.src.cpu import CPU
-from simulator.CSCI6461.project.src.mfr import *
-from simulator.CSCI6461.project.src.word import Word
+from CSCI6461.project.src.cpu import CPU
+from CSCI6461.project.src.mfr import *
+from CSCI6461.project.src.word import Word
 import logging
 import datetime
 
@@ -40,6 +40,8 @@ button_value = "0000000000000000"
 cpu_instance = CPU()
 # store the name and value of register
 reg_list = {}
+# store signals, HLT and RUN
+signal_list = {}
 
 
 # create register creator class
@@ -164,6 +166,7 @@ class PressButton(QWidget):
             if self.button_name in [str(i) for i in range(0, 16)]:
                 self.change_value()
             else:
+                signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
                 self.button_action()
 
                 global reg_list
@@ -242,6 +245,9 @@ class SimulatorGUI(QWidget):
         self.run_label.setStyleSheet("background-color:rgb(0,0,0)")
         self.run_label.setGeometry(QtCore.QRect(1160, 500, 21, 21))
         self.run_label.setText("")
+        global signal_list
+        signal_list["HLT"] = self.hlt_label
+        signal_list["RUN"] = self.run_label
 
     # init all the press buttons
     def init_button_ui(self):
@@ -305,6 +311,7 @@ class SimulatorGUI(QWidget):
             reg_list[key].setGeometry(location[0], location[1], width, 40)
 
 
+# The logger to handle logs
 class QTextEditLogger(logging.Handler):
     def __init__(self, parent):
         super().__init__()
@@ -317,6 +324,7 @@ class QTextEditLogger(logging.Handler):
         self.widget.appendPlainText(msg)
 
 
+# MyDialog used to open tracelog window
 class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -340,11 +348,14 @@ class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
 def refresh_all(reg_list, reg_value):
     for reg in reg_list:
         reg_list[reg].refresh_label(Word.from_bin_string(reg_value[reg]))
+    signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
+    if cpu_instance.halt_signal == 1:
+        signal_list["HLT"].setStyleSheet("background-color:rgb(255,0,0)")
+    else:
+        signal_list["HLT"].setStyleSheet("background-color:rgb(0,0,0)")
 
 
 class ErrorApp:
-    # ...
-
     def raise_error(self):
         assert False
 
