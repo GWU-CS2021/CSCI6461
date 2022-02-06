@@ -49,7 +49,7 @@ class Memory:
 
     def load(self, address):
         if not self.validate_addr(address):
-            raise MemOverflowErr("memory address %d overflow", address)
+            raise MemOverflowErr("memory address %d overflow" % address)
         return self.memory[address]
 
     def init_program(self, file_path="IPL.txt"):
@@ -64,5 +64,6 @@ class Memory:
                     # save the first addr
                     start_addr = addr
                 self.store(addr, value)
+        logging.info("Program loaded with start at %d"%(start_addr))
         return start_addr
         # return the start of memory addr for pc usage

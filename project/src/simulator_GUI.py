@@ -1,13 +1,17 @@
 import sys
+import traceback
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
-    QPushButton
+    QPushButton, QPlainTextEdit
 )
 
-from simulator.CSCI6461.project.src.cpu import CPU
-from simulator.CSCI6461.project.src.word import Word
+from CSCI6461.project.src.cpu import CPU
+from CSCI6461.project.src.mfr import *
+from CSCI6461.project.src.word import Word
 import logging
 import datetime
 
@@ -66,11 +70,35 @@ class RegisterGUI(QWidget):
         return label
 
     def on_click(self):
-        global button_value
-        self.button_action(Word.from_bin_string(button_value))
-        global reg_list
-        global cpu_instance
-        refresh_all(reg_list, cpu_instance.get_all_reg())
+        try:
+            global button_value
+            self.button_action(Word.from_bin_string(button_value))
+            global reg_list
+            global cpu_instance
+            refresh_all(reg_list, cpu_instance.get_all_reg())
+        except MemReserveErr as e:
+            self.logger.error("MemReserveErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_mem_reserve]
+            return
+        except TrapErr as e:
+            logging.error("TrapErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_trap]
+            return
+        except OpCodeErr as e:
+            logging.error("OpCodeErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_op_code]
+            return
+        except MemOverflowErr as e:
+            self.halt_signal = 1
+            logging.error("MemOverflowErr %s" % (e))
+            # self.mfr = mapping_mfr_value[mfr_mem_overflow]
+
+        except Exception as e:
+            logging.error(e)
+            return
 
     def refresh_label(self, Word):
         counter = 0
@@ -115,11 +143,33 @@ class PressButton(QWidget):
                 self.change_value()
             else:
                 self.button_action()
+
                 global reg_list
                 global cpu_instance
                 refresh_all(reg_list, cpu_instance.get_all_reg())
+        except MemReserveErr as e:
+            self.logger.error("MemReserveErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_mem_reserve]
+            return
+        except TrapErr as e:
+            logging.error("TrapErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_trap]
+            return
+        except OpCodeErr as e:
+            logging.error("OpCodeErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_op_code]
+            return
+        except MemOverflowErr as e:
+            self.halt_signal = 1
+            logging.error("MemOverflowErr %s" % (e))
+            # self.mfr = mapping_mfr_value[mfr_mem_overflow]
+
         except Exception as e:
-            print(e)
+            logging.error(e)
+            return
 
     def change_value(self):
         name = self.button_name
@@ -243,16 +293,75 @@ class SimulatorGUI(QWidget):
                 width = location[2] * 30 + 50
             reg_list[key].setGeometry(location[0], location[1], width, 40)
 
+
+class QTextEditLogger(logging.Handler):
+    def __init__(self, parent):
+        super().__init__()
+        self.widget = QtWidgets.QPlainTextEdit(parent)
+        self.widget.setFont(QFont('Arial', 10))
+        self.widget.setReadOnly(True)
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget.appendPlainText(msg)
+
+
+class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        logTextBox = QTextEditLogger(self)
+
+        # You can format what is printed to text box
+        logTextBox.setFormatter(logging.Formatter('[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s'))
+        logging.getLogger("root").addHandler(logTextBox)
+        # You can control the logging level
+
+        layout = QtWidgets.QVBoxLayout()
+        # Add the new logging box widget to the layout
+        layout.addWidget(logTextBox.widget)
+        self.setLayout(layout)
+        self.setGeometry(0,0,500,400)
+
+
+
 def refresh_all(reg_list, reg_value):
     for reg in reg_list:
         reg_list[reg].refresh_label(Word.from_bin_string(reg_value[reg]))
 
 
+class ErrorApp:
+    # ...
+
+    def raise_error(self):
+        assert False
+
+
+def excepthook(exc_type, exc_value, exc_tb):
+    tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    print("error catched!:")
+    print("error message:\n", tb)
+    QtWidgets.QApplication.quit()
+    # or QtWidgets.QApplication.exit(0)
+
+
+
+
 def main():
     set_log()
+    sys.excepthook = excepthook
+    e = ErrorApp()
     app = QApplication(sys.argv)
+    # init GUI
     ex = SimulatorGUI()
+    # init LOGBOX
+    dlg = MyDialog()
+    dlg.show()
+    dlg.raise_()
     sys.exit(app.exec_())
+
+
+
 
 
 if __name__ == '__main__':

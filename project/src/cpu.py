@@ -53,35 +53,43 @@ class CPU:
             self.pc.add(1)
         # TODO mfr will be implemented in phase3
         except MemReserveErr as e:
-            logging.error("MemReserveErr %s" % (e))
+            self.logger.error("MemReserveErr %s" % (e))
+            self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
-            pass
+            return
         except TrapErr as e:
             logging.error("TrapErr %s" % (e))
+            self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
-            pass
+            return
         except OpCodeErr as e:
             logging.error("OpCodeErr %s" % (e))
+            self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
-            pass
+            return
         except MemOverflowErr as e:
+            self.halt_signal = 1
             logging.error("MemOverflowErr %s" % (e))
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
-            pass
+            return
         except Exception as e:
             logging.error(e)
+            return
 
     def store(self):
         self.memory.store(self.mar.get(), self.mbr.get())
-        logging.info("put" + self.mbr.get().convert_to_binary() + "to" + self.mar.get().convert_to_binary())
+        self.logger.info("put %s(%d) to %s(%d) using store" % ( self.mbr.get().convert_to_binary(),self.mbr.get(), self.mar.get().convert_to_binary(),self.mar.get()))
 
     def store_plus(self):
         self.memory.store(self.mar.get(), self.mbr.get())
+        self.logger.info("put %s(%d) to %s(%d) using st+" % (
+        self.mbr.get().convert_to_binary(), self.mbr.get(), self.mar.get().convert_to_binary(), self.mar.get()))
         self.mar.add(1)
 
     def load(self):
         self.mbr.set(self.memory.load(self.mar.get()))
-
+        self.logger.info("load memory[%s(%d)] to mbr[%s(%d)] using load" % (
+        self.mar.get().convert_to_binary(), self.mar.get(), self.mbr.get().convert_to_binary(), self.mbr.get()))
 
     def get_all_reg(self):
         return {"PC": self.pc.get().convert_to_binary(),
@@ -119,9 +127,10 @@ class CPU:
 
     # ix,i,addr input should all be binary string here
     def _get_effective_address(self, ix, i, addr):
+        logging.debug("paring effective address,ix %s, i %s, addr %s"%(ix,i,addr))
         ix_int = int(ix, 2)
-        addr_int = int(addr, 2)
-        addr_result = self.memory.load(Word(addr_int))
+        addr_result = int(addr, 2)
+        # addr_result = self.memory.load(Word(addr_int))
         if ix_int > 0:
             addr_result = Word(addr_result + self.ixr[ix_int].get())
         if i == "1":
