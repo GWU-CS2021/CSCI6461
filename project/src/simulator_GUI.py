@@ -15,6 +15,7 @@ from simulator.CSCI6461.project.src.word import Word
 import logging
 import datetime
 
+
 def set_log():
     loggers = logging.getLogger('root')
     loggers.setLevel(logging.DEBUG)
@@ -24,7 +25,8 @@ def set_log():
     logger_handler.setLevel(logging.DEBUG)
 
     # Create a Formatter for formatting the log messages
-    logger_formatter = logging.Formatter('[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s')
+    logger_formatter = logging.Formatter(
+        '[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s')
 
     # Add the Formatter to the Handler
     logger_handler.setFormatter(logger_formatter)
@@ -32,12 +34,15 @@ def set_log():
     # Add the Handler to the Logger
     loggers.addHandler(logger_handler)
 
+# global variable to store the value of 16 button
 button_value = "0000000000000000"
+# new an instance of cpu
 cpu_instance = CPU()
+# store the name and value of register
 reg_list = {}
 
 
-# Create register creator class.
+# create register creator class
 class RegisterGUI(QWidget):
     def __init__(self, name, action, count, has_button, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -69,6 +74,7 @@ class RegisterGUI(QWidget):
         label.setText("")
         return label
 
+    # click function of LD button
     def on_click(self):
         try:
             global button_value
@@ -100,9 +106,10 @@ class RegisterGUI(QWidget):
             logging.error(e)
             return
 
+    # update the label of each register
     def refresh_label(self, Word):
         counter = 0
-        for digit in Word.convert_to_binary()[16-self.reg_count:][::-1]:
+        for digit in Word.convert_to_binary()[16 - self.reg_count:][::-1]:
             if digit == "1":
                 self.labels[self.reg_count - 1 - counter].setStyleSheet("background-color:rgb(255,0,0)")
             else:
@@ -110,33 +117,48 @@ class RegisterGUI(QWidget):
             counter += 1
 
 
+# class for init press button
 class PressButton(QWidget):
-    original_style_sheet = "background-color: rgb(255, 255, 255);" \
-                           "border-radius: 10px;" \
-                           "border: 1px outset gray;"
+    # button style for 0-15 press button, run and ss
+    original_large_button_style_sheet = "QPushButton{background-color: rgb(255, 255, 255)}" \
+                                        "QPushButton{border-radius: 10px}" \
+                                        "QPushButton{border: 1px outset gray}" \
+                                        "QPushButton{height: 60px}" \
+                                        "QPushButton{width: 40px}"
 
-    pressed_style_sheet = "background-color: rgb(150, 150, 150);" \
-                          "border-radius: 10px;" \
-                          "border: 1px outset gray;"
+    # button style for other button
+    original_style_sheet = "QPushButton{background-color: rgb(255, 255, 255)}" \
+                           "QPushButton{border-radius: 10px}" \
+                           "QPushButton{border: 1px outset gray}" \
+                           "QPushButton{height: 30px}" \
+                           "QPushButton{width: 60px}"
 
-    def __init__(self, name, action, has_value, x, y, width, height, *args, **kwargs):
+    # pressed button style for 0-15 press button
+    pressed_large_button_style_sheet = "QPushButton{background-color: rgb(150, 150, 150)}" \
+                                       "QPushButton{border-radius: 10px}" \
+                                       "QPushButton{border: 1px outset gray}" \
+                                       "QPushButton{height: 60px}" \
+                                       "QPushButton{width: 40px}"
+
+    def __init__(self, name, action, has_value, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.button_name = name
         self.button_action = action
         self.has_value = has_value
-        self.x_pos = x
-        self.y_pos = y
-        self.width = width
-        self.height = height
         self.clicked = False
         self.button = self.create_button(self.button_name)
 
+    # create button function
     def create_button(self, name):
         button = QPushButton(name, self)
-        button.setStyleSheet(self.original_style_sheet)
+        if self.button_name in [str(i) for i in range(0, 16)] or self.button_name == "Run" or self.button_name == "SS":
+            button.setStyleSheet(self.original_large_button_style_sheet)
+        else:
+            button.setStyleSheet(self.original_style_sheet)
         button.clicked.connect(self.on_click)
         return button
 
+    # click function for press button except LD
     def on_click(self):
         try:
             if self.button_name in [str(i) for i in range(0, 16)]:
@@ -171,6 +193,7 @@ class PressButton(QWidget):
             logging.error(e)
             return
 
+    # change the value of 16 press button
     def change_value(self):
         name = self.button_name
         global button_value
@@ -179,54 +202,23 @@ class PressButton(QWidget):
             temp[int(name)] = "0"
             button_value = "".join(temp)
             self.clicked = False
-            self.button.setStyleSheet(self.original_style_sheet)
+            self.button.setStyleSheet(self.original_large_button_style_sheet)
         else:
             temp = list(button_value)
             temp[int(name)] = "1"
             button_value = "".join(temp)
             self.clicked = True
-            self.button.setStyleSheet(self.pressed_style_sheet)
-        print(button_value)
+            self.button.setStyleSheet(self.pressed_large_button_style_sheet)
 
 
-
-# def LD():
-#     # TODO
-#     # change it to refresh panel data function.
-#     cpu_instance.
-#     refresh_all(reg_list, cpu_instance.get_all_reg())
-
-
-def store():
-    pass
-
-
-def store_plus():
-    pass
-
-
-def init():
-    pass
-
-
-def load():
-    pass
-
-
-def single_step():
-    pass
-
-
-def run():
-    pass
-
-
+# init the interface of simulator
 class SimulatorGUI(QWidget):
     def __init__(self):
         super().__init__()
         # self.value = ""
         self.init_ui()
         self.init_button_ui()
+        self.init_signal_ui()
         self.setWindowTitle('Simulator')
         self.setGeometry(240, 200, 1260, 600)
         self.show()
@@ -234,6 +226,24 @@ class SimulatorGUI(QWidget):
         global cpu_instance
         refresh_all(reg_list, cpu_instance.get_all_reg())
 
+    # init run and halt signal light
+    def init_signal_ui(self):
+        hlt_text = QtWidgets.QLabel(self)
+        hlt_text.setGeometry(QtCore.QRect(1120, 460, 41, 21))
+        hlt_text.setText("Halt")
+        self.hlt_label = QtWidgets.QLabel(self)
+        self.hlt_label.setStyleSheet("background-color:rgb(0,0,0)")
+        self.hlt_label.setGeometry(QtCore.QRect(1160, 460, 21, 21))
+        self.hlt_label.setText("")
+        run_text = QtWidgets.QLabel(self)
+        run_text.setGeometry(QtCore.QRect(1120, 500, 41, 21))
+        run_text.setText("Run")
+        self.run_label = QtWidgets.QLabel(self)
+        self.run_label.setStyleSheet("background-color:rgb(0,0,0)")
+        self.run_label.setGeometry(QtCore.QRect(1160, 500, 21, 21))
+        self.run_label.setText("")
+
+    # init all the press buttons
     def init_button_ui(self):
         # name: x, y, width, height, has_value, action
         button_property = {
@@ -263,10 +273,11 @@ class SimulatorGUI(QWidget):
         w = {}
         for key in button_property:
             property = button_property[key]
-            w[key] = PressButton(key, property[5], property[4], property[0], property[1], property[2], property[3],
-                                 self)
-            w[key].setGeometry(QtCore.QRect(property[0], property[1], property[2], property[3]))
+            w[key] = PressButton(key, property[5], property[4], self)
+            w[key].resize(property[2] + 10, property[3] + 10)
+            w[key].move(property[0], property[1])
 
+    # init all the registers
     def init_ui(self):
         map_reg_location = {
             # name: x_location,y_location,reg_count,button_function,has_button
@@ -313,7 +324,8 @@ class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
         logTextBox = QTextEditLogger(self)
 
         # You can format what is printed to text box
-        logTextBox.setFormatter(logging.Formatter('[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s'))
+        logTextBox.setFormatter(logging.Formatter(
+            '[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s'))
         logging.getLogger("root").addHandler(logTextBox)
         # You can control the logging level
 
@@ -321,10 +333,10 @@ class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
         # Add the new logging box widget to the layout
         layout.addWidget(logTextBox.widget)
         self.setLayout(layout)
-        self.setGeometry(0,0,500,400)
+        self.setGeometry(0, 0, 500, 400)
 
 
-
+# global function to refresh all the registers after specific operation
 def refresh_all(reg_list, reg_value):
     for reg in reg_list:
         reg_list[reg].refresh_label(Word.from_bin_string(reg_value[reg]))
@@ -337,7 +349,7 @@ class ErrorApp:
         assert False
 
 
-def excepthook(exc_type, exc_value, exc_tb):
+def except_hook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
     print("error catched!:")
     print("error message:\n", tb)
@@ -345,11 +357,9 @@ def excepthook(exc_type, exc_value, exc_tb):
     # or QtWidgets.QApplication.exit(0)
 
 
-
-
 def main():
     set_log()
-    sys.excepthook = excepthook
+    sys.except_hook = except_hook
     e = ErrorApp()
     app = QApplication(sys.argv)
     # init GUI
@@ -359,9 +369,6 @@ def main():
     dlg.show()
     dlg.raise_()
     sys.exit(app.exec_())
-
-
-
 
 
 if __name__ == '__main__':
