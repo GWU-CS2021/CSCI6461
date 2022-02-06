@@ -22,6 +22,9 @@ class Memory:
         self.memory = [Word(0) for i in range(size)]
         self.size = size
 
+    def reset(self):
+        self.memory = [Word(0) for i in range(self.size)]
+
     def validate_addr(self, addr):
         if addr >= self.size or addr < memory_start:
             return False

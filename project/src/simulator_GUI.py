@@ -256,7 +256,7 @@ class SimulatorGUI(QWidget):
             "Store": [900, 400, 60, 30, False, cpu_instance.store],
             "St+": [980, 400, 60, 30, False, cpu_instance.store_plus],
             "Load": [1060, 400, 60, 30, False, cpu_instance.load],
-            "Init": [1140, 400, 60, 30, False, cpu_instance.memory.init_program],
+            "Init": [1140, 400, 60, 30, False, cpu_instance.init_program],
             "SS": [980, 460, 40, 60, False, cpu_instance.run_single_cycle],
             "Run": [1060, 460, 40, 60, False, cpu_instance.run],
             "0": [100, 460, 40, 60, True, "change_value"],
