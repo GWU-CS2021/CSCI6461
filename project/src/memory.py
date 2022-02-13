@@ -1,6 +1,6 @@
 import os
-from .mfr import *
-from .word import Word
+from mfr import *
+from word import Word
 
 # from constants import memory_size
 memory_start = 8

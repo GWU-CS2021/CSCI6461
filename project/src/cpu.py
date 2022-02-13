@@ -2,10 +2,10 @@
 # Design CPU architecture for phase 1.
 import logging
 
-from .register import Register
-from .word import Word
-from .memory import Memory
-from .mfr import *
+from register import Register
+from word import Word
+from memory import Memory
+from mfr import *
 
 
 class CPU:

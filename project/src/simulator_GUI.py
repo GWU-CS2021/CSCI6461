@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import (
     QPushButton
 )
 
-from simulator.CSCI6461.project.src.cpu import CPU
-from simulator.CSCI6461.project.src.mfr import *
-from simulator.CSCI6461.project.src.word import Word
+from cpu import CPU
+from mfr import *
+from word import Word
 import logging
 import datetime
 
