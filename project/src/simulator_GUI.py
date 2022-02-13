@@ -48,6 +48,7 @@ signal_list = {}
 class RegisterGUI(QWidget):
     def __init__(self, name, action, count, has_button, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.logger = logging.getLogger("root")
         self.reg_name = name
         self.button_action = action
         self.reg_count = count
@@ -80,6 +81,7 @@ class RegisterGUI(QWidget):
     def on_click(self):
         try:
             global button_value
+            self.logger.info("ld on %s with value %s(%d)"%(self.reg_name,button_value,Word.from_bin_string(button_value)))
             self.button_action(Word.from_bin_string(button_value))
             global reg_list
             global cpu_instance
@@ -90,22 +92,22 @@ class RegisterGUI(QWidget):
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
-            logging.error("TrapErr %s" % (e))
+            self.logger.error("TrapErr %s" % (e))
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
-            logging.error("OpCodeErr %s" % (e))
+            self.logger.error("OpCodeErr %s" % (e))
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
             self.halt_signal = 1
-            logging.error("MemOverflowErr %s" % (e))
+            self.logger.error("MemOverflowErr %s" % (e))
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
 
         except Exception as e:
-            logging.error(e)
+            self.logger.error(e)
             return
 
     # update the label of each register
@@ -144,6 +146,7 @@ class PressButton(QWidget):
 
     def __init__(self, name, action, has_value, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.logger = logging.getLogger("root")
         self.button_name = name
         self.button_action = action
         self.has_value = has_value
@@ -178,22 +181,22 @@ class PressButton(QWidget):
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
-            logging.error("TrapErr %s" % (e))
+            self.logger.error("TrapErr %s" % (e))
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
-            logging.error("OpCodeErr %s" % (e))
+            self.logger.error("OpCodeErr %s" % (e))
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
             self.halt_signal = 1
-            logging.error("MemOverflowErr %s" % (e))
+            self.logger.error("MemOverflowErr %s" % (e))
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
 
         except Exception as e:
-            logging.error(e)
+            self.logger.error(e)
             return
 
     # change the value of 16 press button

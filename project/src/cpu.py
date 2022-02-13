@@ -24,6 +24,8 @@ class CPU:
         self.halt_signal = 0
 
     def run(self):
+        self.halt_signal = 0
+        self.logger.info("start run")
         while self.halt_signal == 0:
             self.run_single_cycle()
 
@@ -44,6 +46,7 @@ class CPU:
 
     # TODO this part will be refactored when implementing pipeline
     def run_single_cycle(self):
+        self.logger.info("start single cycle")
         try:
             self.halt_signal = 0
             # MAR <- PC
@@ -61,12 +64,13 @@ class CPU:
             # Deposit Results
             self._get_func_by_op()()
 
-            # exit on halt
-            if self.halt_signal == 1:
-                return
+            if self.halt_signal != 1:
+                # PC++
+                self.pc.add(1)
 
-            # PC++
-            self.pc.add(1)
+            # exit on halt
+
+
         # TODO mfr will be implemented in phase3
         except MemReserveErr as e:
             self.logger.error("MemReserveErr %s" % (e))
@@ -74,22 +78,22 @@ class CPU:
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
-            logging.error("TrapErr %s" % (e))
+            self.logger.error("TrapErr %s" % (e))
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
-            logging.error("OpCodeErr %s" % (e))
+            self.logger.error("OpCodeErr %s" % (e))
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
             self.halt_signal = 1
-            logging.error("MemOverflowErr %s" % (e))
+            self.logger.error("MemOverflowErr %s" % (e))
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
             return
         except Exception as e:
-            logging.error(e)
+            self.logger.error(e)
             return
 
     def store(self):
@@ -143,7 +147,7 @@ class CPU:
 
     # ix,i,addr input should all be binary string here
     def _get_effective_address(self, ix, i, addr):
-        logging.debug("paring effective address,ix %s, i %s, addr %s"%(ix,i,addr))
+        self.logger.debug("paring effective address,ix %s, i %s, addr %s"%(ix,i,addr))
         ix_int = int(ix, 2)
         addr_result = int(addr, 2)
         # addr_result = self.memory.load(Word(addr_int))
@@ -158,56 +162,56 @@ class CPU:
     # Or we can use switch case to declare different scene.
     # halt
     def _hlt(self):
-        logging.debug("")
+        self.logger.debug("")
         self.halt_signal = 1
         return
 
     # LOAD/STORE
     def _ldr(self):
-        logging.debug("")
+        self.logger.debug("")
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         # TODO what cache policy should apply?
-        logging.debug("ldr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("ldr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
         self.gpr[int(r, 2)].set(self.memory.load(effective_addr))
         return
 
     def _str(self):
-        logging.debug("")
+        self.logger.debug("")
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         # TODO what cache policy should apply?
-        logging.debug("str %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("str %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
         self.memory.store(effective_addr, self.gpr[int(r, 2)].get())
         return
 
     # just save effective address to reg
     def _lda(self):
-        logging.debug("")
+        self.logger.debug("")
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        logging.debug("lda %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("lda %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
         self.gpr[int(r, 2)].set(effective_addr)
         return
 
     def _ldx(self):
-        logging.debug("")
+        self.logger.debug("")
         _, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         # raise error for x=0
         if ix == "00":
             raise MemoryError("trying to ldx with ix == 00")
-        logging.debug("ldx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("ldx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
         self.ixr[int(ix, 2)].set(self.memory.load(effective_addr))
         return
 
     def _stx(self, code):
-        logging.debug("")
+        self.logger.debug("")
         _, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         # TODO what cache policy should apply?
         if ix == "00":
             raise MemoryError("trying to stx with ix == 00")
-        logging.debug("stx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("stx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
         self.memory.store(effective_addr, self.ixr[int(ix, 2)].get())
         return
