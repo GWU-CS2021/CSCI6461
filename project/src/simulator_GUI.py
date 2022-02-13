@@ -344,7 +344,7 @@ class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
         # Add the new logging box widget to the layout
         layout.addWidget(logTextBox.widget)
         self.setLayout(layout)
-        self.setGeometry(0, 0, 500, 400)
+        self.setGeometry(50, 100, 500, 400)
 
 
 # global function to refresh all the registers after specific operation
