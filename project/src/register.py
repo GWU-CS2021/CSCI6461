@@ -10,7 +10,7 @@ class Register:
         self.max = 2 ** bit_size - 1
 
     def validate(self, value):
-        if value > self.max:
+        if value > self.max or value < 0:
             return False
         return True
 

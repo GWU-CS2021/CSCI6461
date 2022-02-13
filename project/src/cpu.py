@@ -16,7 +16,8 @@ class CPU:
         self.mar = Register(mar_max)
         self.mbr = Register(mbr_max)
         self.gpr = [Register(reg_size) for i in range(0, 4)]
-        self.ixr = [0, Register(reg_size), Register(reg_size), Register(reg_size)]
+        # although 4 ixr is assigned, the first ixr will always be 0 to avoid conflicts in code.
+        self.ixr = [Register(reg_size) for i in range(0, 4)]
         self.cc = Register(cc_max)
         self.mfr = Register(mfr_max)
         self.ir = Register(ir_max)
@@ -25,6 +26,21 @@ class CPU:
     def run(self):
         while self.halt_signal == 0:
             self.run_single_cycle()
+
+    def init_program(self):
+        self.memory.reset()
+        self.pc.reset()
+        self.mar.reset()
+        self.mbr.reset()
+        for gpr in self.gpr:
+            gpr.reset()
+        for ixr in self.ixr:
+            ixr.reset()
+        self.cc.reset()
+        self.mfr.reset()
+        self.ir.reset()
+        self.halt_signal = 0
+        self.memory.init_program()
 
     # TODO this part will be refactored when implementing pipeline
     def run_single_cycle(self):
