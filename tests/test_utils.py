@@ -1,8 +1,8 @@
-from CSCI6461.project.src.word import *
-from CSCI6461.project.src.register import *
-from CSCI6461.project.src.constants import *
-from CSCI6461.project.src.memory import *
-from CSCI6461.project.src.cpu import CPU
+from simulator.CSCI6461.project.src.word import *
+from simulator.CSCI6461.project.src.register import *
+from simulator.CSCI6461.project.src.constants import *
+from simulator.CSCI6461.project.src.memory import *
+from simulator.CSCI6461.project.src.cpu import CPU
 
 import logging
 import datetime
@@ -27,35 +27,30 @@ def set_log():
 # TODO change this to unit test
 def main():
     set_log()
-    print(format(int("0000010100001100",2),"04x"))
-    print(format(int("0000010000001010", 2), "04x"))
-    loggers = logging.getLogger('root')
-    loggers.info("start")
-    testvar = Word(10)
-    print(testvar, testvar.convert_to_binary())
-    test_pc = Register(pc_max)
-    test_pc.set(Word(99))
-    print(test_pc.get().convert_to_binary())
+    # print(format(int("0000010100001100",2),"04x"))
+    # print(format(int("0000010000001010", 2), "04x"))
+    # loggers = logging.getLogger('root')
+    # loggers.info("start")
+    # testvar = Word(10)
+    # print(testvar, testvar.convert_to_binary())
+    # test_pc = Register(pc_max)
+    # test_pc.set(Word(99))
+    # print(test_pc.get().convert_to_binary())
     m = Memory(2048)
     cpu = CPU(m)
-    m.store(Word(20), Word(4095))
-    print(m.load(20))
-    print(Word(99).parse_as_float_cmd())
-    print(Word(99).get_op_code())
-    hex_val = '0009'
-    print(Word.from_hex_string(hex_val))
+    # m.store(Word(20), Word(4095))
+    # print(m.load(20))
+    # print(Word(99).parse_as_float_cmd())
+    # print(Word(99).get_op_code())
+    # hex_val = '0009'
+    # print(Word.from_hex_string(hex_val))
 
     program_start = m.init_program("IPL.txt")
     cpu.pc.set(program_start)
-    print(cpu.memory.load(32))
+    # print(cpu.memory.load(32))
     print(cpu.get_all_reg())
     cpu.run_single_cycle()
-    print(cpu.get_all_reg())
-    cpu.run_single_cycle()
-    print(cpu.get_all_reg())
-    cpu.run_single_cycle()
-    print(cpu.get_all_reg())
-    print(format(int("1001",2), "02o"))
+    # print(format(int("1001",2), "02o"))
 
 if __name__ == '__main__':
     main()

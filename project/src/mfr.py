@@ -1,4 +1,4 @@
-from .constants import *
+from constants import *
 import logging
 
 loggers = logging.getLogger('root')

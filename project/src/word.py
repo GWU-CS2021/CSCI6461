@@ -12,6 +12,10 @@ class Word(int):
         self.value = value
 
     @staticmethod
+    def from_bin_string(value):
+        return Word(int(value, 2))
+
+    @staticmethod
     def from_oct_string(value):
         return Word(int(value, 8))
 
@@ -43,21 +47,21 @@ class Word(int):
     # for opcode_8 in [01,02,03,41,42]
     def parse_as_load_store_cmd(self):
         binary_word = self.convert_to_binary()
-        r,ix,i,addr = binary_word[6:8],binary_word[8:10],binary_word[10:11],binary_word[11:16]
+        r, ix, i, addr = binary_word[6:8], binary_word[8:10], binary_word[10:11], binary_word[11:16]
         return r, ix, i, addr
 
     # for opcode_8 in [10,11,12,13,14,15,16,17]
     def parse_as_transfer_cmd(self):
         # same structure as load/store, reserved for further implementation
         binary_word = self.convert_to_binary()
-        r, ix, i, addr = binary_word[6:8],binary_word[8:10],binary_word[10:11],binary_word[11:16]
+        r, ix, i, addr = binary_word[6:8], binary_word[8:10], binary_word[10:11], binary_word[11:16]
         return r, ix, i, addr
 
     # for opcode_8 in [04,05,06,07]
     def parse_as_arith_logical_basic_cmd(self):
         # same structure as load/store, reserved for further implementation
         binary_word = self.convert_to_binary()
-        r, ix, i, addr = binary_word[6:8],binary_word[8:10],binary_word[10:11],binary_word[11:16]
+        r, ix, i, addr = binary_word[6:8], binary_word[8:10], binary_word[10:11], binary_word[11:16]
         return r, ix, i, addr
 
     # for opcode_8 in [20,21,22,23,24,25]
