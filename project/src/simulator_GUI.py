@@ -173,9 +173,13 @@ class PressButton(QWidget):
                 global signal_list
                 global reg_list
                 global cpu_instance
+                # set run on
                 signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
+                # refresh gui
                 QApplication.processEvents()
+                # process
                 self.button_action()
+                # set run off
                 signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
                 refresh_all(reg_list, cpu_instance.get_all_reg())
         except MemReserveErr as e:
