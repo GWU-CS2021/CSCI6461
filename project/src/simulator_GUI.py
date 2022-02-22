@@ -1,4 +1,5 @@
 import sys
+import time
 import traceback
 
 from PyQt5 import QtCore, QtWidgets
@@ -169,11 +170,13 @@ class PressButton(QWidget):
             if self.button_name in [str(i) for i in range(0, 16)]:
                 self.change_value()
             else:
-                signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
-                self.button_action()
-
+                global signal_list
                 global reg_list
                 global cpu_instance
+                signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
+                QApplication.processEvents()
+                self.button_action()
+                signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
                 refresh_all(reg_list, cpu_instance.get_all_reg())
         except MemReserveErr as e:
             self.logger.error("MemReserveErr %s" % (e))
@@ -252,6 +255,19 @@ class SimulatorGUI(QWidget):
         signal_list["HLT"] = self.hlt_label
         signal_list["RUN"] = self.run_label
 
+    def interactive_run(self):
+        global cpu_instance
+        cpu_instance.halt_signal = 0
+        cpu_instance.logger.info("start run")
+        while cpu_instance.halt_signal == 0:
+            cpu_instance.run_single_cycle()
+            # no need for additional refresh if halt
+            if cpu_instance.halt_signal == 0:
+                refresh_all(reg_list, cpu_instance.get_all_reg())
+                # force refresh gui during run
+                QApplication.processEvents()
+                time.sleep(1)
+
     # init all the press buttons
     def init_button_ui(self):
         # name: x, y, width, height, has_value, action
@@ -261,7 +277,7 @@ class SimulatorGUI(QWidget):
             "Load": [1060, 400, 60, 30, False, cpu_instance.load],
             "Init": [1140, 400, 60, 30, False, cpu_instance.init_program],
             "SS": [980, 460, 40, 60, False, cpu_instance.run_single_cycle],
-            "Run": [1060, 460, 40, 60, False, cpu_instance.run],
+            "Run": [1060, 460, 40, 60, False, self.interactive_run],
             "0": [100, 460, 40, 60, True, "change_value"],
             "1": [150, 460, 40, 60, True, "change_value"],
             "2": [200, 460, 40, 60, True, "change_value"],
@@ -351,7 +367,6 @@ class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
 def refresh_all(reg_list, reg_value):
     for reg in reg_list:
         reg_list[reg].refresh_label(Word.from_bin_string(reg_value[reg]))
-    signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
     if cpu_instance.halt_signal == 1:
         signal_list["HLT"].setStyleSheet("background-color:rgb(255,0,0)")
     else:
