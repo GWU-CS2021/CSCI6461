@@ -65,3 +65,7 @@ out reg0
 # test cases @ Alan
 Create test cases for cpu backend
 https://github.com/GWU-CS2021/CSCI6461/blob/d8e9e718ceda1e962158d5c3d7856817ef862a3a/project/src/cpu.py#L170
+https://github.com/GWU-CS2021/CSCI6461/blob/d8e9e718ceda1e962158d5c3d7856817ef862a3a/project/src/cpu.py#L179
+https://github.com/GWU-CS2021/CSCI6461/blob/d8e9e718ceda1e962158d5c3d7856817ef862a3a/project/src/cpu.py#L189
+https://github.com/GWU-CS2021/CSCI6461/blob/d8e9e718ceda1e962158d5c3d7856817ef862a3a/project/src/cpu.py#L197
+https://github.com/GWU-CS2021/CSCI6461/blob/d8e9e718ceda1e962158d5c3d7856817ef862a3a/project/src/cpu.py#L208
