@@ -10,15 +10,15 @@ from PyQt5.QtWidgets import (
     QPushButton
 )
 
-from cpu import CPU
-from mfr import *
-from word import Word
+from src.cpu import CPU
+from src.mfr import *
+from src.word import Word
 import logging
 import datetime
 
 
 def set_log():
-    loggers = logging.getLogger('root')
+    loggers = logging.getLogger('cpu')
     loggers.setLevel(logging.DEBUG)
 
     # Create the Handler for logging data to a file
@@ -49,7 +49,7 @@ signal_list = {}
 class RegisterGUI(QWidget):
     def __init__(self, name, action, count, has_button, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger = logging.getLogger("root")
+        self.logger = logging.getLogger("cpu")
         self.reg_name = name
         self.button_action = action
         self.reg_count = count
@@ -147,7 +147,7 @@ class PressButton(QWidget):
 
     def __init__(self, name, action, has_value, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger = logging.getLogger("root")
+        self.logger = logging.getLogger("cpu")
         self.button_name = name
         self.button_action = action
         self.has_value = has_value
@@ -224,6 +224,95 @@ class PressButton(QWidget):
             self.button.setStyleSheet(self.pressed_large_button_style_sheet)
 
 
+# class for init press button
+class KeyboardButton(QWidget):
+    # button style for 0-15 press button, run and ss
+    original_large_button_style_sheet = "QPushButton{background-color: rgb(255, 255, 255)}" \
+                                        "QPushButton{border-radius: 10px}" \
+                                        "QPushButton{border: 1px outset gray}" \
+                                        "QPushButton{height: 40px}" \
+                                        "QPushButton{width: 60px}"
+
+    # button style for other button
+    original_style_sheet = "QPushButton{background-color: rgb(255, 255, 255)}" \
+                           "QPushButton{border-radius: 10px}" \
+                           "QPushButton{border: 1px outset gray}" \
+                           "QPushButton{height: 40px}" \
+                           "QPushButton{width: 40px}"
+
+
+    def __init__(self, name, single_step_run, interactive_run, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logger = logging.getLogger("cpu")
+        self.button_name = name
+        self.single_step_run = single_step_run
+        self.interactive_run = interactive_run
+        self.button = self.create_button(self.button_name)
+
+
+
+    # create button function
+    def create_button(self, name):
+        button = QPushButton(name, self)
+        if self.button_name in ["enter"]:
+            self.resize(70, 50)
+            button.setStyleSheet(self.original_large_button_style_sheet)
+        else:
+            self.resize(50, 50)
+            button.setStyleSheet(self.original_style_sheet)
+        button.clicked.connect(self.on_click)
+        return button
+
+    # click function for press button except LD
+    def on_click(self):
+        try:
+            global cpu_instance
+            if self.button_name == "enter":
+                cpu_instance.keyboard_input_action("\r")
+                # TODO remove
+                logging.getLogger("output2").debug("\r")
+            else:
+                cpu_instance.keyboard_input_action(self.button_name)
+                logging.getLogger("output2").debug(self.button_name)
+
+            signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
+            # refresh gui
+            QApplication.processEvents()
+            # process
+            if cpu_instance.run_mode == 1:
+                self.interactive_run()
+            elif cpu_instance.run_mode == 0:
+                self.single_step_run()
+            else:
+                self.logger.debug("illigal input %s detected"%self.button_name)
+            # set run off
+            signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
+            refresh_all(reg_list, cpu_instance.get_all_reg())
+        except MemReserveErr as e:
+            self.logger.error("MemReserveErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_mem_reserve]
+            return
+        except TrapErr as e:
+            self.logger.error("TrapErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_trap]
+            return
+        except OpCodeErr as e:
+            self.logger.error("OpCodeErr %s" % (e))
+            self.halt_signal = 1
+            # self.mfr = mapping_mfr_value[mfr_op_code]
+            return
+        except MemOverflowErr as e:
+            self.halt_signal = 1
+            self.logger.error("MemOverflowErr %s" % (e))
+            # self.mfr = mapping_mfr_value[mfr_mem_overflow]
+
+        except Exception as e:
+            self.logger.error(e)
+            return
+
+
 # init the interface of simulator
 class SimulatorGUI(QWidget):
     def __init__(self):
@@ -233,11 +322,38 @@ class SimulatorGUI(QWidget):
         self.init_button_ui()
         self.init_signal_ui()
         self.setWindowTitle('Simulator')
-        self.setGeometry(240, 200, 1260, 600)
+        self.init_cache_indicator()
+
+        self.init_output_box()
+        self.init_logbox()
+        self.init_keyboard()
+        self.setGeometry(240, 200, 1600, 900)
         self.show()
         global reg_list
         global cpu_instance
         refresh_all(reg_list, cpu_instance.get_all_reg())
+
+    def init_output_box(self):
+        output_box = QtWidgets.QGroupBox("output", self)
+        log_text_box = QTextEditLogger(output_box, "insert")
+        # You can format what is printed to text box
+        log_text_box.setFormatter(logging.Formatter(
+            '%(message)s'))
+        logging.getLogger("output2").setLevel(logging.DEBUG)
+        logging.getLogger("output2").addHandler(log_text_box)
+        log_text_box.widget.setGeometry(10, 20, 300, 470)
+        output_box.setGeometry(1250, 50, 320, 500)
+
+    def init_logbox(self):
+        log_box = QtWidgets.QGroupBox("simulator_log", self)
+        log_text_box = QTextEditLogger(log_box, "append")
+        # You can format what is printed to text box
+        log_text_box.setFormatter(logging.Formatter(
+            '[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s'))
+        logging.getLogger("cpu").addHandler(log_text_box)
+        # You can control the logging level
+        log_text_box.widget.setGeometry(10, 20, 300, 270)
+        log_box.setGeometry(1250, 550, 320, 300)
 
     # init run and halt signal light
     def init_signal_ui(self):
@@ -249,18 +365,87 @@ class SimulatorGUI(QWidget):
         self.hlt_label.setGeometry(QtCore.QRect(1160, 460, 21, 21))
         self.hlt_label.setText("")
         run_text = QtWidgets.QLabel(self)
-        run_text.setGeometry(QtCore.QRect(1120, 500, 41, 21))
+        run_text.setGeometry(QtCore.QRect(1120, 490, 41, 21))
         run_text.setText("Run")
         self.run_label = QtWidgets.QLabel(self)
         self.run_label.setStyleSheet("background-color:rgb(0,0,0)")
-        self.run_label.setGeometry(QtCore.QRect(1160, 500, 21, 21))
+        self.run_label.setGeometry(QtCore.QRect(1160, 490, 21, 21))
         self.run_label.setText("")
+        input_text = QtWidgets.QLabel(self)
+        input_text.setGeometry(QtCore.QRect(1120, 520, 41, 21))
+        input_text.setText("Input")
+        self.input_label = QtWidgets.QLabel(self)
+        self.input_label.setStyleSheet("background-color:rgb(0,0,0)")
+        self.input_label.setGeometry(QtCore.QRect(1160, 520, 21, 21))
+        self.input_label.setText("")
         global signal_list
         signal_list["HLT"] = self.hlt_label
         signal_list["RUN"] = self.run_label
+        signal_list["INPUT"] = self.input_label
 
+    def init_keyboard(self):
+        keyboard_box = QtWidgets.QGroupBox("keyboard", self)
+        # name: x, y, width, height, has_value, action
+        x1_offset,y1_offset= 20,20
+        x2_offset,y2_offset= 50,70
+        x3_offset,y3_offset= 70,120
+        x4_offset,y4_offset= 90,170
+        button_property = {
+            "1": [0 + x1_offset, y1_offset],
+            "2": [50 + x1_offset, y1_offset],
+            "3": [100+ x1_offset, y1_offset],
+            "4": [150+ x1_offset, y1_offset],
+            "5": [200+ x1_offset, y1_offset],
+            "6": [250+ x1_offset, y1_offset],
+            "7": [300+ x1_offset, y1_offset],
+            "8": [350+ x1_offset, y1_offset],
+            "9": [400+ x1_offset, y1_offset],
+            "0": [450+ x1_offset, y1_offset],
+            "Q": [0 + x2_offset, y2_offset],
+            "W": [50 + x2_offset, y2_offset],
+            "E": [100 + x2_offset, y2_offset],
+            "R": [150 + x2_offset, y2_offset],
+            "T": [200 + x2_offset, y2_offset],
+            "Y": [250 + x2_offset, y2_offset],
+            "U": [300 + x2_offset, y2_offset],
+            "I": [350 + x2_offset, y2_offset],
+            "O": [400 + x2_offset, y2_offset],
+            "P": [450 + x2_offset, y2_offset],
+            "A": [0 + x3_offset, y3_offset],
+            "S": [50 + x3_offset, y3_offset],
+            "D": [100 + x3_offset, y3_offset],
+            "F": [150 + x3_offset, y3_offset],
+            "G": [200 + x3_offset, y3_offset],
+            "H": [250 + x3_offset, y3_offset],
+            "J": [300 + x3_offset, y3_offset],
+            "K": [350 + x3_offset, y3_offset],
+            "L": [400 + x3_offset, y3_offset],
+            "enter": [450 + x3_offset, y3_offset],
+            "Z": [0 + x4_offset, y4_offset],
+            "X": [50 + x4_offset, y4_offset],
+            "C": [100 + x4_offset, y4_offset],
+            "V": [150 + x4_offset, y4_offset],
+            "B": [200 + x4_offset, y4_offset],
+            "N": [250 + x4_offset, y4_offset],
+            "M": [300 + x4_offset, y4_offset],
+        }
+        keyboard_button = {}
+        for key in button_property:
+            property = button_property[key]
+            keyboard_button[key] = KeyboardButton(key, self.single_step, self.interactive_run, keyboard_box)
+            keyboard_button[key].move(property[0], property[1])
+        keyboard_box.setGeometry(20, 550, 600, 300)
+
+
+    def init_cache_indicator(self):
+        cache_box = QtWidgets.QGroupBox("cache", self)
+        cache_box.setGeometry(640, 550, 600, 300)
+
+
+    # interactive run to refresh and run one command every 1 second
     def interactive_run(self):
         global cpu_instance
+        cpu_instance.run_mode = 1
         cpu_instance.halt_signal = 0
         cpu_instance.logger.info("start run")
         while cpu_instance.halt_signal == 0:
@@ -272,6 +457,11 @@ class SimulatorGUI(QWidget):
                 QApplication.processEvents()
                 time.sleep(1)
 
+    def single_step(self):
+        global cpu_instance
+        cpu_instance.run_mode = 0
+        cpu_instance.run_single_cycle()
+
     # init all the press buttons
     def init_button_ui(self):
         # name: x, y, width, height, has_value, action
@@ -280,7 +470,7 @@ class SimulatorGUI(QWidget):
             "St+": [980, 400, 60, 30, False, cpu_instance.store_plus],
             "Load": [1060, 400, 60, 30, False, cpu_instance.load],
             "Init": [1140, 400, 60, 30, False, cpu_instance.init_program],
-            "SS": [980, 460, 40, 60, False, cpu_instance.run_single_cycle],
+            "SS": [980, 460, 40, 60, False, self.single_step],
             "Run": [1060, 460, 40, 60, False, self.interactive_run],
             "0": [100, 460, 40, 60, True, "change_value"],
             "1": [150, 460, 40, 60, True, "change_value"],
@@ -336,35 +526,22 @@ class SimulatorGUI(QWidget):
 
 # The logger to handle logs
 class QTextEditLogger(logging.Handler):
-    def __init__(self, parent):
+    def __init__(self, parent, append_mode):
         super().__init__()
         self.widget = QtWidgets.QPlainTextEdit(parent)
         self.widget.setFont(QFont('Arial', 10))
         self.widget.setReadOnly(True)
+        self.append_mode = append_mode
 
     def emit(self, record):
         msg = self.format(record)
-        self.widget.appendPlainText(msg)
+        if self.append_mode == "append":
+            self.widget.appendPlainText(msg)
+        else:
+            self.widget.insertPlainText(msg)
 
 
-# MyDialog used to open tracelog window
-class MyDialog(QtWidgets.QDialog, QtWidgets.QPlainTextEdit):
-    def __init__(self, parent=None):
-        super().__init__(parent)
 
-        logTextBox = QTextEditLogger(self)
-
-        # You can format what is printed to text box
-        logTextBox.setFormatter(logging.Formatter(
-            '[%(levelname)s:%(asctime)s - %(filename)s:%(lineno)s:%(funcName)10s() - ] - %(message)s'))
-        logging.getLogger("root").addHandler(logTextBox)
-        # You can control the logging level
-
-        layout = QtWidgets.QVBoxLayout()
-        # Add the new logging box widget to the layout
-        layout.addWidget(logTextBox.widget)
-        self.setLayout(layout)
-        self.setGeometry(50, 100, 500, 400)
 
 
 # global function to refresh all the registers after specific operation
@@ -375,6 +552,10 @@ def refresh_all(reg_list, reg_value):
         signal_list["HLT"].setStyleSheet("background-color:rgb(255,0,0)")
     else:
         signal_list["HLT"].setStyleSheet("background-color:rgb(0,0,0)")
+    if cpu_instance.input_signal != -1:
+        signal_list["INPUT"].setStyleSheet("background-color:rgb(255,0,0)")
+    else:
+        signal_list["INPUT"].setStyleSheet("background-color:rgb(0,0,0)")
 
 
 class ErrorApp:
@@ -398,9 +579,6 @@ def main():
     # init GUI
     ex = SimulatorGUI()
     # init LOGBOX
-    dlg = MyDialog()
-    dlg.show()
-    dlg.raise_()
     sys.exit(app.exec_())
 
 

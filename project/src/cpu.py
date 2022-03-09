@@ -1,16 +1,14 @@
-# TODO
-# Design CPU architecture for phase 1.
-import logging
 
-from register import Register
-from word import Word
-from memory import Memory
-from mfr import *
+import logging
+from .register import Register
+from .memory import Memory
+from .mfr import *
 
 
 class CPU:
     def __init__(self, memory=Memory(2048)):
-        self.logger = logging.getLogger("root")
+        self.logger = logging.getLogger("cpu")
+        self.output_log = logging.getLogger("output2")
         self.memory = memory
         self.pc = Register(pc_max)
         self.mar = Register(mar_max)
@@ -21,12 +19,20 @@ class CPU:
         self.cc = Register(cc_max)
         self.mfr = Register(mfr_max)
         self.ir = Register(ir_max)
+        # 1 indicate the machine is in halt
         self.halt_signal = 0
+        # indicate the machine is waiting for keyboard input
+        # if input_signal is not -1, it means reg[input_signal] is waiting input
+        self.input_signal = -1
+        # using rum_mode =0 will continue to single step after input.
+        # using run_mode =1 will continue to continues step after input.
+        # using run_mode =-1 will not run after hitting keyboard
+        self.run_mode = 0
 
     def run(self):
         self.halt_signal = 0
         self.logger.info("start run")
-        while self.halt_signal == 0:
+        while self.halt_signal == 0 and self.input_signal == -1:
             self.run_single_cycle()
 
     def init_program(self):
@@ -42,12 +48,15 @@ class CPU:
         self.mfr.reset()
         self.ir.reset()
         self.halt_signal = 0
+        self.input_signal = -1
         self.memory.init_program()
+        self.char_to_output = ""
 
-    # TODO this part will be refactored when implementing pipeline
     def run_single_cycle(self):
         self.logger.info("start single cycle")
         try:
+            self.output_log.info("abc")
+            self.output_log.info(chr(13))
             self.halt_signal = 0
             # MAR <- PC
             self.mar.set(self.pc.get())
@@ -64,7 +73,8 @@ class CPU:
             # Deposit Results
             self._get_func_by_op()()
 
-            if self.halt_signal != 1:
+            # pc + 1 when in normal phase
+            if self.halt_signal == 0 and self.input_signal == -1:
                 # PC++
                 self.pc.add(1)
 
@@ -138,6 +148,8 @@ class CPU:
             "03": self._lda,
             "41": self._ldx,
             "42": self._stx,
+            "61": self._in,
+            "62": self._out,
         }
         #opcode from binary string to oct string
         op_oct = format(int(op,2), "02o")
@@ -155,7 +167,7 @@ class CPU:
             addr_result = Word(addr_result + self.ixr[ix_int].get())
         if i == "1":
             addr_result = self.memory.load(addr_result)
-        return addr_result
+        return Word(addr_result)
 
     # functions below is to match each and every opcode
     # Should we put all the instruction code separately here?
@@ -205,7 +217,7 @@ class CPU:
         self.ixr[int(ix, 2)].set(self.memory.load(effective_addr))
         return
 
-    def _stx(self, code):
+    def _stx(self):
         self.logger.debug("")
         _, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
@@ -214,4 +226,40 @@ class CPU:
             raise MemoryError("trying to stx with ix == 00")
         self.logger.debug("stx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
         self.memory.store(effective_addr, self.ixr[int(ix, 2)].get())
+        return
+
+    # request input from device
+    def _in(self):
+        self.logger.debug("")
+        r, dev = self.ir.get().parse_as_io_cmd()
+        if dev == "00000":
+            # request input from keyboard
+            self.input_signal = int(r, 2)
+        else:
+            self.logger.debug("requesting input for unsupported device %s" %(dev))
+            return
+        return
+
+    def keyboard_input_action(self, value):
+        # ignore input if not requested
+        if self.input_signal == -1:
+            self.run_mode = -1
+            self.logger.debug("trying to input %s as not being requested" %(value))
+            return
+        # set input to requested reg(use ord to transform to ascii
+        self.gpr[self.input_signal].set(Word(ord(value)))
+        # set input signal to default
+        self.input_signal = -1
+        # pc add one here(after successfully input
+        self.pc.add(1)
+
+    def _out(self):
+        self.logger.debug("")
+        r, dev = self.ir.get().parse_as_io_cmd()
+        if dev == "00001":
+            self.logger.debug("outputting %s from reg %s" % (chr(self.gpr[int(r, 2)].get()),r))
+            self.output_log.info(chr(self.gpr[int(r, 2)].get()))
+        else:
+            self.logger.debug("requesting output to unsupported device %s" % (dev))
+            return
         return

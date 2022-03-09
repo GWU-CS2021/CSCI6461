@@ -1,10 +1,7 @@
-from constants import *
-import logging
-
-loggers = logging.getLogger('root')
-
-
+from .constants import *
 # ReserveLocationErr :0	Illegal Memory Address to Reserved Locations MFR set to binary 0001
+
+
 class MemReserveErr(Exception):
     pass
 

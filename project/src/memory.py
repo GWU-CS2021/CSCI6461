@@ -1,6 +1,7 @@
 import os
-from mfr import *
-from word import Word
+from .mfr import *
+from .word import Word
+import logging
 
 # from constants import memory_size
 memory_start = 8
@@ -67,6 +68,6 @@ class Memory:
                     # save the first addr
                     start_addr = addr
                 self.store(addr, value)
-        logging.info("Program loaded with start at %d"%(start_addr))
+        logging.getLogger("cpu").info("Program loaded with start at %d"%(start_addr))
         return start_addr
         # return the start of memory addr for pc usage
