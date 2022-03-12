@@ -12,8 +12,7 @@ from .word import Word
 
 
 class CacheLine:
-    def __init__(self,addr=Word(0),value=Word(0),last_update=datetime.datetime.now()):
+    def __init__(self, addr=Word(0), value=Word(0), last_update=datetime.datetime.now()):
         self.addr = addr
         self.value = value
         self.last_update = last_update
-

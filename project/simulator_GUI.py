@@ -2,12 +2,12 @@ import sys
 import time
 import traceback
 
-from PyQt5 import QtCore, QtWidgets,QtGui
-from PyQt5.QtGui import QFont, QStandardItemModel
+from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
-    QPushButton, QTableWidget, QTableWidgetItem, QRadioButton, QGridLayout
+    QPushButton, QTableWidget, QTableWidgetItem, QRadioButton
 )
 
 from src.cpu import CPU
@@ -35,6 +35,7 @@ def set_log():
     # Add the Handler to the Logger
     loggers.addHandler(logger_handler)
 
+
 # global variable to store the value of 16 button
 button_value = "0000000000000000"
 # new an instance of cpu
@@ -45,6 +46,7 @@ reg_list = {}
 signal_list = {}
 # ca
 cache_list = {}
+
 
 # create register creator class
 class RegisterGUI(QWidget):
@@ -60,7 +62,7 @@ class RegisterGUI(QWidget):
         label_reg.setGeometry(QtCore.QRect(0, 0, 41, 21))
         label_reg.setText(self.reg_name)
         # generate labels for binary indicator
-        self.labels = [self.create_label() for i in range(0, self.reg_count)]
+        self.labels = [self.create_label() for _ in range(0, self.reg_count)]
         counter = 0
         for label in self.labels:
             label.setGeometry(QtCore.QRect(50 + counter * 30, 0, 21, 21))
@@ -83,7 +85,8 @@ class RegisterGUI(QWidget):
     def on_click(self):
         try:
             global button_value
-            self.logger.info("ld on %s with value %s(%d)"%(self.reg_name,button_value,Word.from_bin_string(button_value)))
+            self.logger.info("ld on %s with value %s(%d)" %
+                             (self.reg_name, button_value, Word.from_bin_string(button_value)))
             self.button_action(Word.from_bin_string(button_value))
             global reg_list
             global cpu_instance
@@ -93,9 +96,9 @@ class RegisterGUI(QWidget):
             return
 
     # update the label of each register
-    def refresh_label(self, Word):
+    def refresh_label(self, word):
         counter = 0
-        for digit in Word.convert_to_binary()[16 - self.reg_count:][::-1]:
+        for digit in word.convert_to_binary()[16 - self.reg_count:][::-1]:
             if digit == "1":
                 self.labels[self.reg_count - 1 - counter].setStyleSheet("background-color:rgb(255,0,0)")
             else:
@@ -147,13 +150,14 @@ class PressButton(QWidget):
 
     # click function for press button except LD
     def on_click(self):
+        global cpu_instance
         try:
             if self.button_name in [str(i) for i in range(0, 16)]:
                 self.change_value()
             else:
                 global signal_list
                 global reg_list
-                global cpu_instance
+
                 # set run on
                 signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
                 # refresh gui
@@ -164,27 +168,28 @@ class PressButton(QWidget):
                 signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
                 refresh_all(reg_list, cpu_instance.get_all_reg())
         except MemReserveErr as e:
-            self.logger.error("MemReserveErr %s" % (e))
-            self.halt_signal = 1
+            self.logger.error("MemReserveErr %s" % e)
+            cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
-            self.logger.error("TrapErr %s" % (e))
-            self.halt_signal = 1
+            self.logger.error("TrapErr %s" % e)
+            cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
-            self.logger.error("OpCodeErr %s" % (e))
-            self.halt_signal = 1
+            self.logger.error("OpCodeErr %s" % e)
+            cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
-            self.halt_signal = 1
-            self.logger.error("MemOverflowErr %s" % (e))
+            cpu_instance.halt_signal = 1
+            self.logger.error("MemOverflowErr %s" % e)
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
 
         except Exception as e:
-            self.logger.error(e,traceback.format_exc())
+            self.logger.error(e, traceback.format_exc())
+            cpu_instance.halt_signal = 1
             return
 
     # change the value of 16 press button
@@ -221,7 +226,6 @@ class KeyboardButton(QWidget):
                            "QPushButton{height: 40px}" \
                            "QPushButton{width: 40px}"
 
-
     def __init__(self, name, single_step_run, interactive_run, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logging.getLogger("cpu")
@@ -229,8 +233,6 @@ class KeyboardButton(QWidget):
         self.single_step_run = single_step_run
         self.interactive_run = interactive_run
         self.button = self.create_button(self.button_name)
-
-
 
     # create button function
     def create_button(self, name):
@@ -265,7 +267,7 @@ class KeyboardButton(QWidget):
             elif cpu_instance.run_mode == 0:
                 self.single_step_run()
             else:
-                self.logger.debug("illigal input %s detected"%self.button_name)
+                self.logger.debug("illegal input %s detected" % self.button_name)
             # set run off
             signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
             refresh_all(reg_list, cpu_instance.get_all_reg())
@@ -290,28 +292,27 @@ class KeyboardButton(QWidget):
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
 
         except Exception as e:
-            self.logger.error(e,traceback.format_exc())
+            self.logger.error(e, traceback.format_exc())
             return
 
+
 class CacheFormatter(QWidget):
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         radiobutton = QRadioButton("BIN", self)
         radiobutton.setChecked(True)
         radiobutton.values = 2
-        radiobutton.toggled.connect(self.onClicked)
-
+        radiobutton.toggled.connect(self.on_click)
 
         radiobutton = QRadioButton("DEC", self)
         radiobutton.values = 10
-        radiobutton.toggled.connect(self.onClicked)
-        radiobutton.move(0,20)
-
+        radiobutton.toggled.connect(self.on_click)
+        radiobutton.move(0, 20)
 
         radiobutton = QRadioButton("HEX", self)
         radiobutton.values = 16
-        radiobutton.toggled.connect(self.onClicked)
+        radiobutton.toggled.connect(self.on_click)
         radiobutton.move(0, 40)
 
         input_text = QtWidgets.QLabel(self)
@@ -339,15 +340,34 @@ class CacheFormatter(QWidget):
         self.input_label.setGeometry(QtCore.QRect(50, 160, 21, 21))
         self.input_label.setText("")
 
-
-    def onClicked(self):
-        radioButton = self.sender()
+    def on_click(self):
+        radio_button = self.sender()
         global cpu_instance
-        if radioButton.isChecked():
-            cpu_instance.cache_display = radioButton.values
+        if radio_button.isChecked():
+            cpu_instance.cache_display = radio_button.values
             refresh_cache()
 
+
 # init the interface of simulator
+def interactive_run():
+    cpu_instance.run_mode = 1
+    cpu_instance.halt_signal = 0
+    cpu_instance.logger.info("start run")
+    while cpu_instance.halt_signal == 0:
+        cpu_instance.run_single_cycle()
+        # no need for additional refresh if halt
+        if cpu_instance.halt_signal == 0:
+            refresh_all(reg_list, cpu_instance.get_all_reg())
+            # force refresh gui during run
+            QApplication.processEvents()
+            time.sleep(1)
+
+
+def single_step():
+    cpu_instance.run_mode = 0
+    cpu_instance.run_single_cycle()
+
+
 class SimulatorGUI(QWidget):
     def __init__(self):
         super().__init__()
@@ -420,21 +440,21 @@ class SimulatorGUI(QWidget):
     def init_keyboard(self):
         keyboard_box = QtWidgets.QGroupBox("keyboard", self)
         # name: x, y, width, height, has_value, action
-        x1_offset,y1_offset= 20,20
-        x2_offset,y2_offset= 50,70
-        x3_offset,y3_offset= 70,120
-        x4_offset,y4_offset= 90,170
+        x1_offset, y1_offset = 20, 20
+        x2_offset, y2_offset = 50, 70
+        x3_offset, y3_offset = 70, 120
+        x4_offset, y4_offset = 90, 170
         button_property = {
             "1": [0 + x1_offset, y1_offset],
             "2": [50 + x1_offset, y1_offset],
-            "3": [100+ x1_offset, y1_offset],
-            "4": [150+ x1_offset, y1_offset],
-            "5": [200+ x1_offset, y1_offset],
-            "6": [250+ x1_offset, y1_offset],
-            "7": [300+ x1_offset, y1_offset],
-            "8": [350+ x1_offset, y1_offset],
-            "9": [400+ x1_offset, y1_offset],
-            "0": [450+ x1_offset, y1_offset],
+            "3": [100 + x1_offset, y1_offset],
+            "4": [150 + x1_offset, y1_offset],
+            "5": [200 + x1_offset, y1_offset],
+            "6": [250 + x1_offset, y1_offset],
+            "7": [300 + x1_offset, y1_offset],
+            "8": [350 + x1_offset, y1_offset],
+            "9": [400 + x1_offset, y1_offset],
+            "0": [450 + x1_offset, y1_offset],
             "Q": [0 + x2_offset, y2_offset],
             "W": [50 + x2_offset, y2_offset],
             "E": [100 + x2_offset, y2_offset],
@@ -465,11 +485,10 @@ class SimulatorGUI(QWidget):
         }
         keyboard_button = {}
         for key in button_property:
-            property = button_property[key]
-            keyboard_button[key] = KeyboardButton(key, self.single_step, self.interactive_run, keyboard_box)
-            keyboard_button[key].move(property[0], property[1])
+            b_property = button_property[key]
+            keyboard_button[key] = KeyboardButton(key, single_step, interactive_run, keyboard_box)
+            keyboard_button[key].move(b_property[0], b_property[1])
         keyboard_box.setGeometry(20, 550, 600, 300)
-
 
     def init_cache_indicator(self):
 
@@ -479,7 +498,7 @@ class SimulatorGUI(QWidget):
         self.tableWidget_0 = QTableWidget(cache_box)
         self.tableWidget_0.setRowCount(8)
         self.tableWidget_0.setColumnCount(2)
-        self.tableWidget_0.setGeometry(10,20,250,270)
+        self.tableWidget_0.setGeometry(10, 20, 250, 270)
         self.tableWidget_0.setHorizontalHeaderItem(0, QTableWidgetItem("Address"))
         self.tableWidget_0.setHorizontalHeaderItem(1, QTableWidgetItem("Value"))
         header = self.tableWidget_0.horizontalHeader()
@@ -494,42 +513,24 @@ class SimulatorGUI(QWidget):
         header = self.tableWidget_1.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-        global cpu_instance,cache_list
+        global cpu_instance, cache_list
         index = 0
-        for caches in cpu_instance.memory.cache:
-            cache_list["address"+str(index)] = QTableWidgetItem("0000000000000000")
-            cache_list["value"+str(index)] = QTableWidgetItem("0000000000000000")
-            if index <8:
+        for _ in cpu_instance.memory.cache:
+            cache_list["address" + str(index)] = QTableWidgetItem("0000000000000000")
+            cache_list["value" + str(index)] = QTableWidgetItem("0000000000000000")
+            if index < 8:
                 self.tableWidget_0.setVerticalHeaderItem(index, QTableWidgetItem(str(index)))
-                self.tableWidget_0.setItem(index, 0, cache_list["address"+str(index)])
-                self.tableWidget_0.setItem(index, 1, cache_list["value"+str(index)])
+                self.tableWidget_0.setItem(index, 0, cache_list["address" + str(index)])
+                self.tableWidget_0.setItem(index, 1, cache_list["value" + str(index)])
             else:
-                self.tableWidget_1.setVerticalHeaderItem(index%8, QTableWidgetItem(str(index)))
-                self.tableWidget_1.setItem(index % 8, 0, cache_list["address"+str(index)])
-                self.tableWidget_1.setItem(index % 8, 1, cache_list["value"+str(index)])
+                self.tableWidget_1.setVerticalHeaderItem(index % 8, QTableWidgetItem(str(index)))
+                self.tableWidget_1.setItem(index % 8, 0, cache_list["address" + str(index)])
+                self.tableWidget_1.setItem(index % 8, 1, cache_list["value" + str(index)])
             index += 1
-        #cache_list["address3"].setBackground(QtGui.QColor(100,100,150))
+        # cache_list["address3"].setBackground(QtGui.QColor(100,100,150))
         cache_box.setGeometry(640, 550, 600, 300)
 
     # interactive run to refresh and run one command every 1 second
-    def interactive_run(self):
-        global cpu_instance
-        cpu_instance.run_mode = 1
-        cpu_instance.halt_signal = 0
-        cpu_instance.logger.info("start run")
-        while cpu_instance.halt_signal == 0:
-            cpu_instance.run_single_cycle()
-            # no need for additional refresh if halt
-            if cpu_instance.halt_signal == 0:
-                refresh_all(reg_list, cpu_instance.get_all_reg())
-                # force refresh gui during run
-                QApplication.processEvents()
-                time.sleep(1)
-
-    def single_step(self):
-        global cpu_instance
-        cpu_instance.run_mode = 0
-        cpu_instance.run_single_cycle()
 
     # init all the press buttons
     def init_button_ui(self):
@@ -539,8 +540,8 @@ class SimulatorGUI(QWidget):
             "St+": [980, 400, 60, 30, False, cpu_instance.store_plus],
             "Load": [1060, 400, 60, 30, False, cpu_instance.load],
             "Init": [1140, 400, 60, 30, False, cpu_instance.init_program],
-            "SS": [980, 460, 40, 60, False, self.single_step],
-            "Run": [1060, 460, 40, 60, False, self.interactive_run],
+            "SS": [980, 460, 40, 60, False, single_step],
+            "Run": [1060, 460, 40, 60, False, interactive_run],
             "0": [100, 460, 40, 60, True, "change_value"],
             "1": [150, 460, 40, 60, True, "change_value"],
             "2": [200, 460, 40, 60, True, "change_value"],
@@ -560,10 +561,10 @@ class SimulatorGUI(QWidget):
         }
         w = {}
         for key in button_property:
-            property = button_property[key]
-            w[key] = PressButton(key, property[5], property[4], self)
-            w[key].resize(property[2] + 10, property[3] + 10)
-            w[key].move(property[0], property[1])
+            b_property = button_property[key]
+            w[key] = PressButton(key, b_property[5], b_property[4], self)
+            w[key].resize(b_property[2] + 10, b_property[3] + 10)
+            w[key].move(b_property[0], b_property[1])
 
     # init all the registers
     def init_ui(self):
@@ -611,7 +612,6 @@ class QTextEditLogger(logging.Handler):
             self.widget.insertPlainText(msg)
 
 
-
 def refresh_cache():
     index = 0
     for cache in cpu_instance.memory.cache:
@@ -624,14 +624,14 @@ def refresh_cache():
         else:
             address = cache.addr.convert_to_binary()
             value = cache.value.convert_to_binary()
-        cache_list["address"+str(index)].setText(address)
+        cache_list["address" + str(index)].setText(address)
         cache_list["value" + str(index)].setText(value)
         if cpu_instance.memory.cache_update_at == index:
-            cache_list["address" + str(index)].setBackground(QtGui.QColor(0,0,128))
-            cache_list["value" + str(index)].setBackground(QtGui.QColor(0,0,128))
+            cache_list["address" + str(index)].setBackground(QtGui.QColor(0, 0, 128))
+            cache_list["value" + str(index)].setBackground(QtGui.QColor(0, 0, 128))
         elif cpu_instance.memory.cache_hit_at == index:
-            cache_list["address" + str(index)].setBackground(QtGui.QColor(0,128,0))
-            cache_list["value" + str(index)].setBackground(QtGui.QColor(0,128,0))
+            cache_list["address" + str(index)].setBackground(QtGui.QColor(0, 128, 0))
+            cache_list["value" + str(index)].setBackground(QtGui.QColor(0, 128, 0))
         elif cpu_instance.memory.cache_replace_at == index:
             cache_list["address" + str(index)].setBackground(QtGui.QColor(128, 0, 0))
             cache_list["value" + str(index)].setBackground(QtGui.QColor(128, 0, 0))
@@ -640,10 +640,11 @@ def refresh_cache():
             cache_list["value" + str(index)].setBackground(QtGui.QColor(255, 255, 255))
         index += 1
 
+
 # global function to refresh all the registers after specific operation
-def refresh_all(reg_list, reg_value):
-    for reg in reg_list:
-        reg_list[reg].refresh_label(Word.from_bin_string(reg_value[reg]))
+def refresh_all(reg_list_local, reg_value):
+    for reg in reg_list_local:
+        reg_list_local[reg].refresh_label(Word.from_bin_string(reg_value[reg]))
     if cpu_instance.halt_signal == 1:
         signal_list["HLT"].setStyleSheet("background-color:rgb(255,0,0)")
     else:
@@ -654,6 +655,7 @@ def refresh_all(reg_list, reg_value):
         signal_list["INPUT"].setStyleSheet("background-color:rgb(0,0,0)")
     refresh_cache()
 
+
 class ErrorApp:
     def raise_error(self):
         assert False
@@ -661,7 +663,7 @@ class ErrorApp:
 
 def except_hook(exc_type, exc_value, exc_tb):
     tb = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-    print("error catched!:")
+    print("error caught!:")
     print("error message:\n", tb)
     QtWidgets.QApplication.quit()
     # or QtWidgets.QApplication.exit(0)
@@ -670,10 +672,10 @@ def except_hook(exc_type, exc_value, exc_tb):
 def main():
     set_log()
     sys.except_hook = except_hook
-    e = ErrorApp()
+    _ = ErrorApp()
     app = QApplication(sys.argv)
     # init GUI
-    ex = SimulatorGUI()
+    _ = SimulatorGUI()
     # init LOGBOX
     sys.exit(app.exec_())
 

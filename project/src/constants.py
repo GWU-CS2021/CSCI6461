@@ -37,4 +37,3 @@ mapping_mfr_value = {
     mfr_op_code: Word(4),
     mfr_mem_overflow: Word(8)
 }
-

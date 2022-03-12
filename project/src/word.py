@@ -33,7 +33,6 @@ class Word(int):
     def convert_to_float(self):
         return float(self.value)
 
-
     def validate(self, value):
         if value > self.max:
             return False
