@@ -26,6 +26,11 @@ mfr_op_code = "op_code"
 # 3	Illegal Memory Address beyond 2048 (memory installed)
 mfr_mem_overflow = "overflow"
 
+cc_overflow = "1000"
+cc_underflow = "0100"
+cc_divzero = "0010"
+cc_equalornot = "0001"
+
 mapping_mfr_value = {
     mfr_mem_reserve: Word(1),
     mfr_trap: Word(2),

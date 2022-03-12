@@ -26,9 +26,13 @@ class Word(int):
     def convert_to_binary(self):
         return format(self.value, "016b")
 
+    def convert_to_hex(self):
+        return format(self.value, "04x")
+
     # TODO implement in part IV
     def convert_to_float(self):
-        pass
+        return float(self.value)
+
 
     def validate(self, value):
         if value > self.max:

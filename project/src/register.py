@@ -39,8 +39,22 @@ class Register:
 
     # for future use
     def rotate(self, lr, al, count):
-        pass
+        bin_value = self.value.convert_to_binary()
+        count_int = Word.from_bin_string(count)
+        if lr == "0":
+            new_binary_value = format((self.value << count_int), "016b")
+            new_binary_value = new_binary_value[len(new_binary_value)-16:16-count_int] + \
+                               format(0, "016b")[0:count_int - len(new_binary_value)+ 16] + \
+                               new_binary_value[0:len(new_binary_value)-16]
+            self.set(Word.from_bin_string(new_binary_value))
+        else:
+            new_binary_value = Word(self.value >> count_int).convert_to_binary()
+            new_binary_value = bin_value[16-count_int:16] + new_binary_value[count_int:16]
+            self.set(Word.from_bin_string(new_binary_value))
 
     # for future use
     def shift(self, lr, al, count):
-        pass
+        if lr == "0":
+            self.set(Word(self.value << Word.from_bin_string(count)))
+        else:
+            self.set(Word(self.value >> Word.from_bin_string(count)))

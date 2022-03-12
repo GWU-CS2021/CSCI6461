@@ -2,7 +2,8 @@
 import logging
 import datetime
 import src.cpu as cpu2
-import src.word as word
+import src.register as reg
+from src.word import Word
 
 def set_log():
     loggers = logging.getLogger('root')
@@ -23,31 +24,10 @@ def set_log():
 
 # TODO change this to unit test
 def main():
-    set_log()
-    # print(format(int("0000010100001100",2),"04x"))
-    # print(format(int("0000010000001010", 2), "04x"))
-    # loggers = logging.getLogger('root')
-    # loggers.info("start")
-    # testvar = Word(10)
-    # print(testvar, testvar.convert_to_binary())
-    # test_pc = Register(pc_max)
-    # test_pc.set(Word(99))
-    # print(test_pc.get().convert_to_binary())
-    cpu = cpu2.CPU()
-    # m.store(Word(20), Word(4095))
-    # print(m.load(20))
-    # print(Word(99).parse_as_float_cmd())
-    # print(Word(99).get_op_code())
-    # hex_val = '0009'
-    # print(Word.from_hex_string(hex_val))
-
-    cpu.init_program()
-    # print(cpu.memory.load(32))
-    print(cpu.get_all_reg())
-    cpu.run_single_cycle()
-    # print(format(int("1001",2), "02o"))
-    print(chr(13))
-    print(ord("\r"))
+    x = 128
+    y = 127
+    print (x | y)
+    print (format(x,"016b"),format(x ^ 65535,"016b"))
 
 if __name__ == '__main__':
     main()
