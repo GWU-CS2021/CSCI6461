@@ -114,7 +114,6 @@ class Memory:
     def _store(self, address, value):
         if not isinstance(value, Word):
             raise TypeError("value must be set to Word type")
-        # TODO store through cache
         if not isinstance(address, Word):
             raise TypeError("address must be set to Word type")
         if not self.validate_addr(address):
