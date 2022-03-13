@@ -4,7 +4,7 @@ from op_code_list import OpCodeList
 
 class Assemble:
 
-    def assemble(self, file_path="instruction.txt"):
+    def assemble(self, file_path="Test_Case_instruction.txt"):
         logging.info("Assemble start working.")
         binary_instruction_list = []
         hex_instruction_list = []
@@ -64,7 +64,7 @@ class Assemble:
         elif instruction in OpCodeList.Group5:
             binary_string += format(int(OpCodeList.Group5[instruction], 8), "06b")
             binary_string += format(int(data_list[1]), "02b")
-            if len(data_list) == 3:
+            if len(data_list) >= 3:
                 binary_string += format(int(data_list[2]), "02b")
             else:
                 binary_string += "00"
