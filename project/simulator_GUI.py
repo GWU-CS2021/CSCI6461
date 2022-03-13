@@ -613,6 +613,7 @@ class QTextEditLogger(logging.Handler):
         self.widget = QtWidgets.QPlainTextEdit(parent)
         self.widget.setFont(QFont('Arial', 10))
         self.widget.setReadOnly(True)
+
         self.append_mode = append_mode
 
     def emit(self, record):
@@ -621,6 +622,7 @@ class QTextEditLogger(logging.Handler):
             self.widget.appendPlainText(msg)
         else:
             self.widget.insertPlainText(msg)
+        self.widget.moveCursor(QtGui.QTextCursor.End)
 
 
 def refresh_cache():
@@ -637,18 +639,23 @@ def refresh_cache():
             value = cache.value.convert_to_binary()
         cache_list["address" + str(index)].setText(address)
         cache_list["value" + str(index)].setText(value)
+        cache_list["address" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
+        cache_list["value" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
         if cpu_instance.memory.cache_update_at == index:
             cache_list["address" + str(index)].setBackground(QtGui.QColor(0, 0, 128))
             cache_list["value" + str(index)].setBackground(QtGui.QColor(0, 0, 128))
         elif cpu_instance.memory.cache_hit_at == index:
             cache_list["address" + str(index)].setBackground(QtGui.QColor(0, 128, 0))
             cache_list["value" + str(index)].setBackground(QtGui.QColor(0, 128, 0))
+
         elif cpu_instance.memory.cache_replace_at == index:
             cache_list["address" + str(index)].setBackground(QtGui.QColor(128, 0, 0))
             cache_list["value" + str(index)].setBackground(QtGui.QColor(128, 0, 0))
         else:
             cache_list["address" + str(index)].setBackground(QtGui.QColor(255, 255, 255))
             cache_list["value" + str(index)].setBackground(QtGui.QColor(255, 255, 255))
+            cache_list["address" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(0, 0, 0)))
+            cache_list["value" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(0, 0, 0)))
         index += 1
 
 

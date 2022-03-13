@@ -1,7 +1,7 @@
 # Program starts at 0x100
 0100 0514 # Load R1 at 0x14
 0101 090C # STR R1 to 0xC
-# ===== start 1
+# ===== start taking number
 0102 3037 # Print
 0103 3038 # Input
 0104 8493 # LDX I2 at 0x13
@@ -18,7 +18,7 @@
 010E 849B # ldx x2 -> loop start(001B)
 010F 0414 # Load R0 at 0x14
 0110 1C01 # sub R0,1
-#=======start loop===========
+#=======start cal loop===========
 0111 090F #str r1 to 000F(current address)
 0112 844F # ldx x1 from 000F(current address)
 0113 0640 # ldr r2,x1(current value)
@@ -35,32 +35,17 @@
 011E 0A15 # str r2,0,0015 # min_value(0015) = 000B
 011F 1901 # Add R1,1
 0120 3880 # SOB R0 x2()
-#endloop==============
-0121 0C0A # LDA R0,A
-0122 081A # str r0,1A
-0123 081B # str r0,1B
-0124 081C # str r0,1C
-0125 081D # str r0,1D
-0126 081E # str r0,1E
-0127 0415 $ LDR R0 at 0x15
-0128 3039 $ JSR R0 at 0x19[i]
-0129 041E # ldr r0, 1e
-012A C821 # output r0
-012B 041D # ldr r0, 1d
-012C C821 # output r0
-012D 041C # ldr r0, 1c
-012E C821 # output r0
-012F 041B # ldr r0, 1b
-0130 C821 # output r0
-0131 041A # ldr r0, 1a
-0132 C821 # output r0
+#end cal loop==============
+# reverse output
+0121 0415 $ LDR R0 at 0x15
+0122 3039 $ JSR R0 at 0x19[i]
 
 
 
 
 
 
-# Subroutine to print "Plz input"
+# Subroutine to print "Plz input + sequence"
 0400 0B0E # Save R3 to 0x0E
 0401 0717 # Load R3 at 0x17 <-0400
 0402 1B07 # Add 7 to R3 <-0407
@@ -128,9 +113,9 @@
 0243 1911 # Add 0x11 to R1 # 251
 0244 090B # Save R1 to 0xB
 0245 844B # LDR IXR1 at 0xB # 251
-0246 1905 # Add 5 to R1
+0246 190F # Add F to R1 > 260
 0247 1900 # Add 0 to R1
-0248 090B # Save R1 to 0xB
+0248 090B # Save R1 to 0xB # 260 -> start of reverse output
 0249 1900 # Add 0 to R1
 024A 1900 # Add 0 to R1
 024B 0F0A # LDA R3
@@ -138,20 +123,36 @@
 024D 0F00 # LDA R3
 024E CB01 # OUT R3 # output null???
 024F 0E0A # LDA R2 with 10
-0250 0F1A # LDA R3 with 1A
-# =====start loop
-0251 0B19 # STR R3 019
-0252 87d9 # LDX I3 019
+0250 0712 # LDR R3 with addr 0012
+# =====start stack loop
+0251 0B0e # STR R3 0xe
+0252 87ce # LDX I3 0xe
 0253 4480 # DVD R0/R2
 0254 1918 # Add 24 to R1
 0255 1918 # Add 24 to R1
 #0256 C921 # OUT R1
-0256 09C0 # str r1 to I3
+0256 09C0 # str r1 to addr(I3)
 0257 1B01 # air R3,1
 0258 2440 # JNE R0 IXR1 # 251
 # =====endloop
-0259 070F # Load R3 at 0xF
-025A 3400 # Return
+# ===== start output loop perpare=====
+0259 1F00 # sir R3,0
+025A 0B0E # str R3,0xe
+025B 060e #  ldr R2,0xe
+025C 1612 # smr R2, 12
+025D 844B # ldx x1,0xb <- start of output loop[260]
+025E 1900 # Add 0 to R1
+025F 1900 # Add 0 to R1
+#=======start reverse output
+0260 1F01 # sir R3,1
+0261 0B0E # str R3,0xe
+0262 84CE # ldx x3,0xe
+0263 04C0 # ldr r0,x3
+0264 C821 # output r0
+0265 3A40 # sob r2,x1
+# ====end of output loop
+0266 070F # Load R3 at 0xF
+0267 3400 # Return
 
 # String of "Plz input"
 0500 0050
@@ -180,10 +181,10 @@
 0012 0041 # pointer to A
 
 0013 0102 # pointer to IO loop
-0014 0004 # loop 20 + 1 times
+0014 0015 # loop 20 + 1 times
 
-0015 0000 # smallest number
-0016 FFFF # smallest difference
+0015 0000 # var for nearest number
+0016 FFFF # var for smallest difference
 
 0017 0400 # pointer to print input subroutine
 0018 0210 # pointer to read input subroutine
