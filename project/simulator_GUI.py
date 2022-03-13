@@ -248,8 +248,8 @@ class KeyboardButton(QWidget):
 
     # click function for press button except LD
     def on_click(self):
+        global cpu_instance
         try:
-            global cpu_instance
             if self.button_name == "enter":
                 cpu_instance.keyboard_input_action("\r")
                 # TODO remove
@@ -273,29 +273,31 @@ class KeyboardButton(QWidget):
             refresh_all(reg_list, cpu_instance.get_all_reg())
         except MemReserveErr as e:
             self.logger.error("MemReserveErr %s" % (e))
-            self.halt_signal = 1
+            cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
             self.logger.error("TrapErr %s" % (e))
-            self.halt_signal = 1
+            cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
             self.logger.error("OpCodeErr %s" % (e))
-            self.halt_signal = 1
+            cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
-            self.halt_signal = 1
+            cpu_instance.halt_signal = 1
             self.logger.error("MemOverflowErr %s" % (e))
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
 
         except Exception as e:
             self.logger.error(e, traceback.format_exc())
+            cpu_instance.halt_signal = 1
             return
 
 
+# use CacheFormatter to change cache display to DEC/BIN/HEX
 class CacheFormatter(QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -348,19 +350,19 @@ class CacheFormatter(QWidget):
             refresh_cache()
 
 
-# init the interface of simulator
+# interactive run, refresh ui after each cycle
 def interactive_run():
     cpu_instance.run_mode = 1
     cpu_instance.halt_signal = 0
     cpu_instance.logger.info("start run")
-    while cpu_instance.halt_signal == 0:
+    while cpu_instance.halt_signal == 0 and cpu_instance.input_signal == -1:
         cpu_instance.run_single_cycle()
         # no need for additional refresh if halt
-        if cpu_instance.halt_signal == 0:
+        if cpu_instance.halt_signal == 0 and cpu_instance.input_signal == -1:
             refresh_all(reg_list, cpu_instance.get_all_reg())
             # force refresh gui during run
             QApplication.processEvents()
-            time.sleep(1)
+            time.sleep(0.01)
 
 
 def single_step():
@@ -388,6 +390,7 @@ class SimulatorGUI(QWidget):
         refresh_all(reg_list, cpu_instance.get_all_reg())
 
     def init_output_box(self):
+        # init output box
         output_box = QtWidgets.QGroupBox("output", self)
         log_text_box = QTextEditLogger(output_box, "insert")
         # You can format what is printed to text box
@@ -399,6 +402,7 @@ class SimulatorGUI(QWidget):
         output_box.setGeometry(1250, 50, 320, 500)
 
     def init_logbox(self):
+        # init debug logging
         log_box = QtWidgets.QGroupBox("simulator_log", self)
         log_text_box = QTextEditLogger(log_box, "append")
         # You can format what is printed to text box
@@ -438,6 +442,7 @@ class SimulatorGUI(QWidget):
         signal_list["INPUT"] = self.input_label
 
     def init_keyboard(self):
+        # init keyboard here
         keyboard_box = QtWidgets.QGroupBox("keyboard", self)
         # name: x, y, width, height, has_value, action
         x1_offset, y1_offset = 20, 20
@@ -491,7 +496,7 @@ class SimulatorGUI(QWidget):
         keyboard_box.setGeometry(20, 550, 600, 300)
 
     def init_cache_indicator(self):
-
+        # init cache indicator here
         cache_box = QtWidgets.QGroupBox("cache", self)
         cache_formatter = CacheFormatter(cache_box)
         cache_formatter.move(520, 20)
@@ -504,6 +509,9 @@ class SimulatorGUI(QWidget):
         header = self.tableWidget_0.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        self.tableWidget_0.verticalHeader().setStretchLastSection(True)
+        self.tableWidget_0.verticalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch)
         self.tableWidget_1 = QTableWidget(cache_box)
         self.tableWidget_1.setRowCount(8)
         self.tableWidget_1.setColumnCount(2)
@@ -513,6 +521,9 @@ class SimulatorGUI(QWidget):
         header = self.tableWidget_1.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        self.tableWidget_1.verticalHeader().setStretchLastSection(True)
+        self.tableWidget_1.verticalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch)
         global cpu_instance, cache_list
         index = 0
         for _ in cpu_instance.memory.cache:

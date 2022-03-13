@@ -1,10 +1,199 @@
-0008 000A
-0009 0100
-000A 84A8
-000B 84C9
-000C 0428
-000D 0029
-000E 0E00
-000F 0A10
-0010 FFFF
-0100 0008
+# Program starts at 0x100
+0100 0514 # Load R1 at 0x14
+0101 090C # STR R1 to 0xC
+# ===== start 1
+0102 3037 # Print
+0103 3038 # Input
+0104 8493 # LDX I2 at 0x13
+0105 050C # Load R1 at 0xC
+0106 1D01 # Sub 1 from R1
+0107 090C # STR R1 to 0xC
+0108 1901 # Add 1 to R1
+0109 3980 # SOB R1 IXR2 + 0000 -> 0102
+# ===== end 1
+010A 0511 # LDr R1, 0011[i] #start of numbers
+010B 1901 # Add R1,1
+010C 090C # str r1,000C(final address)
+010D 1901 # Add R1,1 # now pointing to next number
+010E 849B # ldx x2 -> loop start(001B)
+010F 0414 # Load R0 at 0x14
+0110 1C01 # sub R0,1
+#=======start loop===========
+0111 090F #str r1 to 000F(current address)
+0112 844F # ldx x1 from 000F(current address)
+0113 0640 # ldr r2,x1(current value)
+0114 0A0B # str r2,000B(save value)
+0115 162C # smr r2, 000C[i](diff with final)
+0116 0A0A # str r2 to 000A(save diff)
+0117 1616 # smr r2, 0016()
+0118 0F00 # Add 0 to R3(pass)
+0119 298A # jcc: cc=1, x2,09
+011A 2C8E #jma #x2, 0E
+011B 060A # ldr r2,0,000A
+011C 0A16 # str r2,0,0016 #min_diff(0016) = 000A
+011D 060B # ldr r2,0,000B
+011E 0A15 # str r2,0,0015 # min_value(0015) = 000B
+011F 1901 # Add R1,1
+0120 3880 # SOB R0 x2()
+#endloop==============
+0121 0C0A # LDA R0,A
+0122 081A # str r0,1A
+0123 081B # str r0,1B
+0124 081C # str r0,1C
+0125 081D # str r0,1D
+0126 081E # str r0,1E
+0127 0415 $ LDR R0 at 0x15
+0128 3039 $ JSR R0 at 0x19[i]
+0129 041E # ldr r0, 1e
+012A C821 # output r0
+012B 041D # ldr r0, 1d
+012C C821 # output r0
+012D 041C # ldr r0, 1c
+012E C821 # output r0
+012F 041B # ldr r0, 1b
+0130 C821 # output r0
+0131 041A # ldr r0, 1a
+0132 C821 # output r0
+
+
+
+
+
+
+# Subroutine to print "Plz input"
+0400 0B0E # Save R3 to 0x0E
+0401 0717 # Load R3 at 0x17 <-0400
+0402 1B07 # Add 7 to R3 <-0407
+0403 0B0D # Save R3 to 0x0D
+0404 848D # LDX I2 at 0x0D <-0407
+0405 0C09 # LDA R0 with 9
+0406 0610 # LDR R2 at 0x10
+0407 0A0F # STR R2 to 0x0F
+0408 844F # LDX I1 at 0x0F
+0409 0540 # LDR R1 with I1
+040A C901 # OUTPUT R1
+040B 1A01 # Add 1 to R2
+040C 3880 # SOB R0 IXR2+0000 -< 0407
+040D 0512 # LDR r1,12
+040E 1114 # amr r1,0,14
+040F 150C # smr r1,0,0C
+0410 C901 # out put r1
+0411 0D0A # LDA r1,0
+0412 C901 # output r1
+0413 070E # Load R3 at 0x0E
+0414 3400 # Return
+
+
+# Subroutine to take input
+0210 0B0E # Save R3 to 0x0E
+0211 0718 # Load R3 at 0x18
+0212 1B09 # Add 9 to R3
+0213 0B0D # Save R3 to 0x0D
+0214 848D # LDX I2 at 0x0D
+0215 1B10 # Add 16 to R3
+0216 1B07 # Add 7 to R3
+0217 0B0F # Save R3 to 0x0F
+0218 84CF # LDX I3 at 0x0F
+0219 CC00 # CHK keyboard store to R0
+021A 2080 # JZ R0 IXR2
+021B C400 # IN Keyboard store to R0
+021C 1C0D # R0 -13
+021D 20C0 # JZ R0 IXR3
+021E 180D # R0 +13
+021F C801 # OUT R0
+0220 0511 # LDR R1 at 0x11 # pointer to array
+0221 110C # ADD 0xC to R1  # add offset(0xC is the counter of loop)
+0222 090B # STR R1 to 0xB
+0223 844B # LDR I1 at 0xB # I1 is the pointer to current number
+0224 0540 # LDR R1 I1 + 0000
+0225 0E0A # LDA R2 with 10
+0226 4180 # MLT # x 10
+0227 0A0A # STR R2 to 0xA
+0228 100A # Add 0xA to R0   # add to input
+0229 1C0C # Sub 12 from R0
+022A 1C0C # Sub 12 from R0
+022B 1C0C # Sub 12 from R0
+022C 1C0C # Sub 12 from R0  #input -48 to value
+022D 0840 # Store R0 to I1  #final result saved
+022E 2C80 # JMA IXR2
+0230 0C0A # LDA R0 with \n
+0231 C801 # OUT R0
+0232 070E # Load R3 at 0x0E
+0233 3400 # Return
+
+# Subroutine to print a number
+0240 080F # Save R0 to 0xF
+0241 0B0F # Save R3 to 0xF #???????
+0242 0519 # LDR R1 at 0x19 # 240
+0243 1911 # Add 0x11 to R1 # 251
+0244 090B # Save R1 to 0xB
+0245 844B # LDR IXR1 at 0xB # 251
+0246 1905 # Add 5 to R1
+0247 1900 # Add 0 to R1
+0248 090B # Save R1 to 0xB
+0249 1900 # Add 0 to R1
+024A 1900 # Add 0 to R1
+024B 0F0A # LDA R3
+024C CB01 # OUT R3 # output \n
+024D 0F00 # LDA R3
+024E CB01 # OUT R3 # output null???
+024F 0E0A # LDA R2 with 10
+0250 0F1A # LDA R3 with 1A
+# =====start loop
+0251 0B19 # STR R3 019
+0252 87d9 # LDX I3 019
+0253 4480 # DVD R0/R2
+0254 1918 # Add 24 to R1
+0255 1918 # Add 24 to R1
+#0256 C921 # OUT R1
+0256 09C0 # str r1 to I3
+0257 1B01 # air R3,1
+0258 2440 # JNE R0 IXR1 # 251
+# =====endloop
+0259 070F # Load R3 at 0xF
+025A 3400 # Return
+
+# String of "Plz input"
+0500 0050
+0501 006C
+0502 007A
+0503 0020
+0504 0049
+0505 006E
+0506 0070
+0507 0075
+0508 0074
+0509 000A
+050A 0020
+
+
+000A 0000 # var
+000B 0000 # var
+000C 0000 # var
+000D 0000 # var
+000E 0000 # var
+000F 0000 # var
+0010 0500 # pointer to string "Input"
+0011 0600 # pointer to array list of 20 numbers[601-615]
+
+
+0012 0041 # pointer to A
+
+0013 0102 # pointer to IO loop
+0014 0004 # loop 20 + 1 times
+
+0015 0000 # smallest number
+0016 FFFF # smallest difference
+
+0017 0400 # pointer to print input subroutine
+0018 0210 # pointer to read input subroutine
+0019 0240 # pointer to print number subroutine
+001A 0000
+001B 0111 # start of cal loop
+001C 010E
+001D 011F
+001E 011B
+001F 011A
+
+
+

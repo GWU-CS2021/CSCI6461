@@ -61,7 +61,7 @@ class Memory:
         if address in self.cache_map:
             # update cache
             self.logger.debug("updating cache of address %d to value %d" % (address, value))
-            self.cache[self.cache_map[address]] = CacheLine(address, value, datetime.datetime.now())
+            self.cache[self.cache_map[address]] = CacheLine(Word(address), Word(value), datetime.datetime.now())
             self.cache_update_at = self.cache_map[address]
             # self.cache_hit_at = -1
             # self.cache_replace_at = -1
@@ -70,7 +70,7 @@ class Memory:
             index = self._malloc_cache_index()
             self.logger.debug("replacing cache of address %d to address %d" % (self.cache[index].addr, address))
             self.cache_map[address] = index
-            self.cache[index] = CacheLine(address, value, datetime.datetime.now())
+            self.cache[index] = CacheLine(Word(address), Word(value), datetime.datetime.now())
             # self.cache_hit_at = -1
             # self.cache_update_at = -1
             self.cache_replace_at = index
@@ -82,7 +82,7 @@ class Memory:
             index = self._malloc_cache_index()
             self.logger.debug("replacing cache of address %d to address %d" % (self.cache[index].addr, address))
             self.cache_map[address] = index
-            self.cache[index] = CacheLine(address, memory_value, datetime.datetime.now())
+            self.cache[index] = CacheLine(Word(address), Word(memory_value), datetime.datetime.now())
             # self.cache_hit_at = -1
             # self.cache_update_at = -1
             self.cache_replace_at = index

@@ -82,7 +82,7 @@ class Word(int):
     # for opcode_8 in [61,62,63]
     def parse_as_io_cmd(self):
         binary_word = self.convert_to_binary()
-        r, dev_id = binary_word[6:7], binary_word[11:15]
+        r, dev_id = binary_word[6:8], binary_word[11:16]
         return r, dev_id
 
     # for opcode_8 in [33,34,35,36,37,50,51]

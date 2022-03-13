@@ -104,6 +104,7 @@ class CPU:
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
             return
         except Exception as e:
+            self.halt_signal = 1
             self.logger.error(e)
             return
 
@@ -153,6 +154,7 @@ class CPU:
             "42": self._stx,
             "61": self._in,
             "62": self._out,
+            "63": self._chk,
             "10": self._jz,
             "11": self._jne,
             "12": self._jcc,
@@ -205,8 +207,7 @@ class CPU:
     def _ldr(self):
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        # TODO what cache policy should apply?
-        self.logger.debug("ldr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("ldr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.gpr[int(r, 2)].set(self.memory.load_facade(effective_addr))
         self.pc.add(1)
         return
@@ -214,8 +215,7 @@ class CPU:
     def _str(self):
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        # TODO what cache policy should apply?
-        self.logger.debug("str %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("str %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.memory.store_facade(effective_addr, self.gpr[int(r, 2)].get())
         self.pc.add(1)
         return
@@ -224,29 +224,30 @@ class CPU:
     def _lda(self):
         r, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("lda %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("lda %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.gpr[int(r, 2)].set(effective_addr)
         self.pc.add(1)
         return
 
     def _ldx(self):
         _, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
-        effective_addr = self._get_effective_address(ix, i, addr)
+        effective_addr = self._get_effective_address("00", i, addr)
         # raise error for x=0
         if ix == "00":
             raise MemoryError("trying to ldx with ix == 00")
-        self.logger.debug("ldx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("ldx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.ixr[int(ix, 2)].set(self.memory.load_facade(effective_addr))
         self.pc.add(1)
         return
 
     def _stx(self):
         _, ix, i, addr = self.ir.get().parse_as_load_store_cmd()
-        effective_addr = self._get_effective_address(ix, i, addr)
+        effective_addr = self._get_effective_address("00", i, addr)
+
         # TODO what cache policy should apply?
         if ix == "00":
             raise MemoryError("trying to stx with ix == 00")
-        self.logger.debug("stx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("stx %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.memory.store_facade(effective_addr, self.ixr[int(ix, 2)].get())
         self.pc.add(1)
         return
@@ -254,6 +255,7 @@ class CPU:
     # request input from device
     def _in(self):
         r, dev = self.ir.get().parse_as_io_cmd()
+        self.logger.debug("in %s,%s" % (r, dev))
         if dev == "00000":
             # request input from keyboard
             self.input_signal = int(r, 2)
@@ -261,6 +263,20 @@ class CPU:
             self.logger.debug("requesting input for unsupported device %s" % dev)
             return
         # pc add at input complete
+        return
+
+    def _chk(self):
+        r, dev = self.ir.get().parse_as_io_cmd()
+        self.logger.debug("chk %s,%s" % (r, dev))
+        if dev == "00000" or dev == "00001":
+            # request input from keyboard
+            self.gpr[int(r, 2)].set(Word(1))
+        else:
+            self.gpr[int(r, 2)].set(Word(0))
+            self.logger.debug("requesting chk for unsupported device %s" % dev)
+            return
+        # pc add at input complete
+        self.pc.add(1)
         return
 
     def keyboard_input_action(self, value):
@@ -278,8 +294,10 @@ class CPU:
 
     def _out(self):
         r, dev = self.ir.get().parse_as_io_cmd()
+        self.logger.debug("out %s,%s" % (r, dev))
         if dev == "00001":
-            self.logger.debug("outputting %s from reg %s" % (chr(self.gpr[int(r, 2)].get()), r))
+            self.logger.debug(
+                "outputting %s,%s from reg %s" % (chr(self.gpr[int(r, 2)].get()), self.gpr[int(r, 2)].get(), r))
             self.output_log.info(chr(self.gpr[int(r, 2)].get()))
         else:
             self.logger.debug("requesting output to unsupported device %s" % dev)
@@ -290,7 +308,7 @@ class CPU:
     def _jz(self):
         r, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("jz %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("jz %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         if self.gpr[int(r, 2)].get() == 0:
             self.pc.set(effective_addr)
             self.logger.debug("jz jumping to %s" % effective_addr)
@@ -302,7 +320,7 @@ class CPU:
     def _jne(self):
         r, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("jne %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("jne %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         if self.gpr[int(r, 2)].get() != 0:
             self.pc.set(effective_addr)
             self.logger.debug("jne jumping to %s" % effective_addr)
@@ -314,10 +332,11 @@ class CPU:
     def _jcc(self):
         cc, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("jcc %s,%s,%s[%s] %s:%s" % (cc, ix, addr, i, "effective:", effective_addr))
-        if self.cc.get()[int(cc, 2)] != 0:
+        self.logger.debug("jcc %s,%s,%s[%s] %s:%s" % (cc, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
+        if self.cc.get().convert_to_binary()[12 + int(cc, 2)] != "0":
             self.pc.set(effective_addr)
-            self.logger.debug("jcc jumping to %s" % effective_addr)
+            self.logger.debug("jcc jumping to %s, with cc value %s" % (
+                effective_addr.convert_to_hex(), self.cc.get().convert_to_binary()))
         else:
             self.pc.add(1)
             self.logger.debug("jcc no jump")
@@ -326,15 +345,15 @@ class CPU:
     def _jma(self):
         _, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("jma %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("jma %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.pc.set(effective_addr)
         return
 
     def _jsr(self):
         _, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("jsr %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr))
-        self.gpr[3].set(self.pc.get() + 1)
+        self.logger.debug("jsr %s,%s[%s] %s:%s" % (ix, addr, i, "effective:", effective_addr.convert_to_hex()))
+        self.gpr[3].set(Word(self.pc.get() + 1))
         self.pc.set(effective_addr)
         return
 
@@ -349,11 +368,11 @@ class CPU:
     def _sob(self):
         r, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("sob %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("sob %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.gpr[int(r, 2)].add(-1)
         if self.gpr[int(r, 2)].get() > 0:
             self.pc.set(effective_addr)
-            self.logger.debug("sob jumping to %s" % effective_addr)
+            self.logger.debug("sob jumping to %s" % effective_addr.convert_to_hex())
         else:
             # reg == 0
             self.pc.add(1)
@@ -363,19 +382,20 @@ class CPU:
     def _jge(self):
         r, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("jge %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("jge %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         if self.gpr[int(r, 2)].get() >= 0:
             self.pc.set(effective_addr)
-            self.logger.debug("jge jumping to %s" % effective_addr)
+            self.logger.debug("jge jumping to %s" % effective_addr.convert_to_hex())
         else:
             self.pc.add(1)
             self.logger.debug("jge no jump")
         return
 
     def _amr(self):
+        self.cc.set(Word(0))
         r, ix, i, addr = self.ir.get().parse_as_arith_logical_basic_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("amr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("amr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         result = self.gpr[int(r, 2)].get() + self.memory.load_facade(effective_addr)
         if result > 65535:
             self.cc.set(Word.from_bin_string(cc_overflow))
@@ -384,17 +404,20 @@ class CPU:
         return
 
     def _smr(self):
+        self.cc.set(Word(0))
         r, ix, i, addr = self.ir.get().parse_as_arith_logical_basic_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
-        self.logger.debug("smr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr))
+        self.logger.debug("smr %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         result = self.gpr[int(r, 2)].get() - self.memory.load_facade(effective_addr)
         if result < 0:
             self.cc.set(Word.from_bin_string(cc_underflow))
+            result = -result
         self.gpr[int(r, 2)].set(Word(result))
         self.pc.add(1)
         return
 
     def _air(self):
+        self.cc.set(Word(0))
         r, _, _, immed = self.ir.get().parse_as_arith_logical_basic_cmd()
         self.logger.debug("air %s,%s" % (r, immed))
         result = self.gpr[int(r, 2)].get() + Word.from_bin_string(immed)
@@ -405,11 +428,13 @@ class CPU:
         return
 
     def _sir(self):
+        self.cc.set(Word(0))
         r, _, _, immed = self.ir.get().parse_as_arith_logical_basic_cmd()
         self.logger.debug("sir %s,%s" % (r, immed))
         result = self.gpr[int(r, 2)].get() - Word.from_bin_string(immed)
         if result < 0:
             self.cc.set(Word.from_bin_string(cc_underflow))
+            result = -result
         self.gpr[int(r, 2)].set(Word(result))
         self.pc.add(1)
         return
@@ -428,10 +453,13 @@ class CPU:
         self.pc.add(1)
 
     def _mlt(self):
+        self.cc.set(Word(0))
         rx, ry = self.ir.get().parse_as_arith_logical_xy_cmd()
         self.logger.debug("mlt %s,%s" % (rx, ry))
-        if rx not in ["00", "10"] or ry not in ["00", "10"]:
+        # TODO check if this is wrong
+        if rx in ["11"] or ry in ["11"]:
             self.logger.error("rx or ry position not correct")
+            self.halt_signal = 1
             return
         result = self.gpr[int(rx, 2)].get() * self.gpr[int(ry, 2)].get()
         self.gpr[int(rx, 2) + 1].set(Word(result % (1 << 16)))
@@ -439,13 +467,16 @@ class CPU:
         self.pc.add(1)
 
     def _dvd(self):
+        self.cc.set(Word(0))
         rx, ry = self.ir.get().parse_as_arith_logical_xy_cmd()
         self.logger.debug("dvd %s,%s" % (rx, ry))
-        if rx not in ["00", "10"] or ry not in ["00", "10"]:
+        # TODO check if this is wrong
+        if rx in ["11"] or ry in ["11"]:
             self.logger.error("rx or ry position not correct")
             return
         if self.gpr[int(ry, 2)].get() == 0:
             self.cc.set(Word.from_bin_string(cc_divzero))
+            self.halt_signal = 1
             return
         result = self.gpr[int(rx, 2)].get().convert_to_float() / self.gpr[int(ry, 2)].get().convert_to_float()
         self.gpr[int(rx, 2) + 1].set(Word(self.gpr[int(rx, 2)].get() % self.gpr[int(ry, 2)].get()))
@@ -460,7 +491,7 @@ class CPU:
             result = "1"
         c_string = self.cc.get().convert_to_binary()
         c_string[15] = result
-        self.cc.set(c_string)
+        self.cc.set(Word.from_bin_string(c_string))
         self.pc.add(1)
 
     def _and(self):
