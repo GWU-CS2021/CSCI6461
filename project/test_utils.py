@@ -1,10 +1,11 @@
-import datetime
+
 import logging
+import datetime
+import src.cpu as cpu2
+import src.register as reg
+from src.word import Word
 
-from memory import Memory
-
-
-def main():
+def set_log():
     loggers = logging.getLogger('root')
     loggers.setLevel(logging.DEBUG)
 
@@ -20,12 +21,13 @@ def main():
 
     # Add the Handler to the Logger
     loggers.addHandler(logger_handler)
-    # TODO
-    # init gui
-    # init machine
-    # ready
-    # Design the init of simulator.
 
+# TODO change this to unit test
+def main():
+    x = 128
+    y = 127
+    print (x | y)
+    print (format(x,"016b"),format(x ^ 65535,"016b"))
 
 if __name__ == '__main__':
     main()
