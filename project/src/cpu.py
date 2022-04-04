@@ -54,6 +54,9 @@ class CPU:
         self.input_signal = -1
         self.memory.init_program()
 
+    def load_file(self,file_path):
+        self.memory.load_file(self.pc.get(), file_path)
+
     def run_single_cycle(self):
         self.logger.info("start single cycle")
         try:
@@ -140,6 +143,8 @@ class CPU:
                 "MFR": self.mfr.get().convert_to_binary(),
                 "IR": self.ir.get().convert_to_binary(),
                 }
+
+
 
     def _get_func_by_op(self):
         op = self.ir.get().get_op_code()

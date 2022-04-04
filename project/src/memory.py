@@ -157,3 +157,22 @@ class Memory:
         self.logger.info("Program loaded with start at %d" % start_addr)
         return start_addr
         # return the start of memory addr for pc usage
+
+    def load_file(self, start, file_path="paragraph.txt"):
+        self.logger.info("load file %s at %d" % (file_path, start))
+        with open(file_path, "r+") as p_reader:
+            tmp_string = p_reader.read()
+            counter = start
+            for char in tmp_string:
+                asc_code = ord(char)
+                if asc_code == 10:
+                    asc_code = 13
+                self._store(Word(counter), Word(asc_code))
+                counter += 1
+                if counter >= self.size:
+                    raise MemOverflowErr
+            start_loc, end_loc = Word(30), Word(31)
+            self._store(start_loc, Word(start))
+            self._store(end_loc, Word(counter))
+        self.logger.info("load finished, start %d, end %d" % (start, counter))
+

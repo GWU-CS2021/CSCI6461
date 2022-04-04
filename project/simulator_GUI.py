@@ -441,6 +441,9 @@ class SimulatorGUI(QWidget):
         signal_list["RUN"] = self.run_label
         signal_list["INPUT"] = self.input_label
 
+
+
+
     def init_keyboard(self):
         # init keyboard here
         keyboard_box = QtWidgets.QGroupBox("keyboard", self)
@@ -543,6 +546,12 @@ class SimulatorGUI(QWidget):
 
     # interactive run to refresh and run one command every 1 second
 
+    def load_file(self):
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Single File', "", '')
+        if file_path == "":
+            return
+        cpu_instance.load_file(file_path)
+
     # init all the press buttons
     def init_button_ui(self):
         # name: x, y, width, height, has_value, action
@@ -551,6 +560,7 @@ class SimulatorGUI(QWidget):
             "St+": [980, 400, 60, 30, False, cpu_instance.store_plus],
             "Load": [1060, 400, 60, 30, False, cpu_instance.load],
             "Init": [1140, 400, 60, 30, False, cpu_instance.init_program],
+            "LdFile": [820, 400, 60, 30, False, self.load_file],
             "SS": [980, 460, 40, 60, False, single_step],
             "Run": [1060, 460, 40, 60, False, interactive_run],
             "0": [100, 460, 40, 60, True, "change_value"],
