@@ -13,37 +13,95 @@ class OpCodeList:
     AIR: Final = "06"
     SIR: Final = "07"
 
-    JZ: Final = "10"
-    JNE: Final = "11"
-    JCC: Final = "12"
-    JMA: Final = "13"
-    JSR: Final = "14"
-    RFS: Final = "15"
-    SOB: Final = "16"
-    JGE: Final = "17"
+    JZ: Final = "010"
+    JNE: Final = "011"
+    JCC: Final = "012"
+    JMA: Final = "013"
+    JSR: Final = "014"
+    RFS: Final = "015"
+    SOB: Final = "016"
+    JGE: Final = "017"
 
-    DVD: Final = "21"
-    TRR: Final = "22"
-    AND: Final = "23"
-    ORR: Final = "24"
-    NOT: Final = "25"
+    MLT: Final = "020"
+    DVD: Final = "021"
+    TRR: Final = "022"
+    AND: Final = "023"
+    ORR: Final = "024"
+    NOT: Final = "025"
 
-    SRC: Final = "31"
-    RRC: Final = "32"
+    SRC: Final = "031"
+    RRC: Final = "032"
 
-    FADD: Final = "33"
-    FSUB: Final = "34"
-    VADD: Final = "35"
-    VSUB: Final = "36"
-    CNVRT: Final = "37"
+    FADD: Final = "033"
+    FSUB: Final = "034"
+    VADD: Final = "035"
+    VSUB: Final = "036"
+    CNVRT: Final = "037"
 
-    LDX: Final = "41"
-    STX: Final = "42"
+    LDX: Final = "041"
+    STX: Final = "042"
 
-    LDFR: Final = "50"
-    STFR: Final = "51"
+    LDFR: Final = "050"
+    STFR: Final = "051"
 
-    IN: Final = "61"
-    OUT: Final = "62"
-    CHK: Final = "63"
+    IN: Final = "061"
+    OUT: Final = "062"
+    CHK: Final = "063"
 
+    # format as r,x,address,i
+    Group1 = {
+        "LDR": LDR,
+        "STR": STR,
+        "LDA": LDA,
+        "JZ": JZ,
+        "JNE": JNE,
+        "JCC": JCC,
+        "SOB": SOB,
+        "JGE": JGE,
+        "AMR": AMR,
+        "SMR": SMR
+    }
+    # format as x,address,i
+    Group2 = {
+        "LDX": LDX,
+        "STX": STX,
+        "JMA": JMA,
+        "JSR": JSR
+    }
+    # format as immediate
+    Group3 = {"RFS": RFS}
+    # format as r, immediate
+    Group4 = {
+        "AIR": AIR,
+        "SIR": SIR
+    }
+    # format as rx, ry
+    Group5 = {
+        "MLT": MLT,
+        "DVD": DVD,
+        "TRR": TRR,
+        "AND": AND,
+        "ORR": ORR,
+        "NOT": NOT
+    }
+    # format as r, count , L/R, A/L
+    Group6 = {
+        "SRC": SRC,
+        "RRC": RRC
+    }
+    # format as r, deviceId
+    Group7 = {
+        "IN": IN,
+        "OUT": OUT,
+        "CHK": CHK
+    }
+    # format as fr, x, address, i
+    Group8 = {
+        "FADD": FADD,
+        "FSUB": FSUB,
+        "VADD": VADD,
+        "VSUB": VSUB,
+        "CNVRT": CNVRT,
+        "LDFR": LDFR,
+        "STFR": STFR
+    }
