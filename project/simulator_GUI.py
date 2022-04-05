@@ -250,12 +250,15 @@ class KeyboardButton(QWidget):
     def on_click(self):
         global cpu_instance
         try:
+            value = self.button_name
             if self.button_name == "enter":
                 cpu_instance.keyboard_input_action("\r")
                 # TODO remove
                 # logging.getLogger("output2").debug("\r")
             else:
-                cpu_instance.keyboard_input_action(self.button_name)
+                if ord(value) <= ord("Z") and ord(value) >= ord("A"):
+                    value = (chr(ord(value)+32))
+                cpu_instance.keyboard_input_action(value)
                 # logging.getLogger("output2").debug(self.button_name)
 
             signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
@@ -267,7 +270,7 @@ class KeyboardButton(QWidget):
             elif cpu_instance.run_mode == 0:
                 self.single_step_run()
             else:
-                self.logger.debug("illegal input %s detected" % self.button_name)
+                self.logger.debug("illegal input %s detected" % value)
             # set run off
             signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
             refresh_all(reg_list, cpu_instance.get_all_reg())
