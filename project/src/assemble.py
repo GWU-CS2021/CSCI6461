@@ -13,10 +13,11 @@ class Assemble:
                 line = line.strip("\n")
                 line = self.convert_instruction_to_binary(line)
                 if len(line) > 16:
-                    raise TypeError("Invalid operation code.")
+                    raise TypeError("Invalid operation code: length > 16")
                 binary_instruction_list.append(line)
                 line = format(int(line, 2), "04x")
                 hex_instruction_list.append(line)
+                print(line)
         logging.info("Assemble ends.")
         return binary_instruction_list, hex_instruction_list
 
