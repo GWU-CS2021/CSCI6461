@@ -25,7 +25,6 @@ class Assemble:
         data_list = self.preprocess(data_list)
         binary_string = ""
         instruction = data_list[0]
-        print(data_list)
         if instruction == "HLT":
             binary_string += "0000000000000000"
         if instruction == "TRAP":
