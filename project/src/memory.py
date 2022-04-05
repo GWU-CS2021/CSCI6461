@@ -174,5 +174,6 @@ class Memory:
             start_loc, end_loc = Word(30), Word(31)
             self._store(start_loc, Word(start))
             self._store(end_loc, Word(counter))
+            self._store(Word(19), Word(100))
         self.logger.info("load finished, start %d, end %d" % (start, counter))
 
