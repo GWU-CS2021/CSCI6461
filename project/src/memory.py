@@ -110,6 +110,11 @@ class Memory:
             return False
         return True
 
+    def validate_load_addr(self, addr):
+        if addr >= self.size or addr < 0:
+            return False
+        return True
+
     def _store(self, address, value):
         if not isinstance(value, Word):
             raise TypeError("value must be set to Word type")
@@ -128,7 +133,7 @@ class Memory:
         self.memory[target_addr_map[target]] = value
 
     def _load(self, address):
-        if not self.validate_addr(address):
+        if not self.validate_load_addr(address):
             raise MemOverflowErr("memory address %d overflow" % address)
         self.logger.debug("loading address %d from memory, value %d" % (address, self.memory[address]))
         return self.memory[address]

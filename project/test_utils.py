@@ -1,1 +1,4 @@
-print(chr(ord("O")+32))
+from src.cpu import CPU
+
+instance = CPU()
+instance.trigger_mfr(1)
