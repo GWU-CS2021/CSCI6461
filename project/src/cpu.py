@@ -31,6 +31,25 @@ class CPU:
         # 16 -> hex output cache, 2->binary output cache
         self.cache_display = 2
 
+    def trigger_mfr(self, mfr_type):
+        map_type_word = {0:Word(1),1:Word(2),2:Word(4),3:Word(8)}
+        self.mfr.set(map_type_word[mfr_type])
+        curr_pc = self.pc.get() + 1
+        mfr_pc = self.memory.load_facade(Word(1))
+        self.logger.debug("triggering mfr, curr_pc %d, mfr_pc %d, mfr_type %d"%(curr_pc,mfr_pc,map_type_word[mfr_type]))
+        self.pc.set(Word(mfr_pc))
+        self.memory.store_reserved("fault_pc",Word(curr_pc))
+        self.memory.store_reserved("fault",map_type_word[mfr_type])
+
+    # trigger trap use the trap code and add this code to Mem[0] to get the routine needed tobe executed
+    # then swap current pc to mem[4] and set pc to the address above.
+    def trigger_trap(self, trap_code):
+        curr_pc = self.pc.get() + 1
+        trap_pc = self.memory.load_facade(Word(self.memory.load_facade(Word(0)) + trap_code))
+        self.logger.debug("triggering trap, trap_code %s, curr_pc %d, jumpto trap_pc %d"%(trap_code,curr_pc,trap_pc))
+        self.pc.set(Word(trap_pc))
+        self.memory.store_reserved("trap_pc", Word(curr_pc))
+
     def run(self):
         self.halt_signal = 0
         self.logger.info("start run")
@@ -62,6 +81,7 @@ class CPU:
         try:
             # self.output_log.info("abc")
             # self.output_log.info(chr(13))
+            self.mfr.reset()
             self.halt_signal = 0
             # MAR <- PC
             self.mar.set(self.pc.get())
@@ -87,21 +107,25 @@ class CPU:
 
         # TODO mfr will be implemented in phase3
         except MemReserveErr as e:
+            self.trigger_mfr(0)
             self.logger.error("MemReserveErr %s" % e)
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
+            self.trigger_mfr(1)
             self.logger.error("TrapErr %s" % e)
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
+            self.trigger_mfr(2)
             self.logger.error("OpCodeErr %s" % e)
             self.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
+            self.trigger_mfr(3)
             self.halt_signal = 1
             self.logger.error("MemOverflowErr %s" % e)
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
@@ -172,6 +196,7 @@ class CPU:
             "05": self._smr,
             "06": self._air,
             "07": self._sir,
+            "30": self._trap,
             "31": self._src,
             "32": self._rrc,
             "20": self._mlt,
@@ -516,3 +541,9 @@ class CPU:
         self.logger.debug("not %s" % rx)
         self.gpr[int(rx, 2)].set(Word(self.gpr[int(rx, 2)].get() ^ 65535))
         self.pc.add(1)
+
+    def _trap(self):
+        trap = self.ir.get().parse_as_trap_cmd()
+        self.logger.debug("trap %s "% (trap))
+        self.trigger_trap(Word.from_bin_string(trap))
+

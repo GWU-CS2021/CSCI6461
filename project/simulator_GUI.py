@@ -168,21 +168,29 @@ class PressButton(QWidget):
                 signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
                 refresh_all(reg_list, cpu_instance.get_all_reg())
         except MemReserveErr as e:
+            cpu_instance.trigger_mfr(0)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             self.logger.error("MemReserveErr %s" % e)
             cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
+            cpu_instance.trigger_mfr(1)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             self.logger.error("TrapErr %s" % e)
             cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
+            cpu_instance.trigger_mfr(2)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             self.logger.error("OpCodeErr %s" % e)
             cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
+            cpu_instance.trigger_mfr(3)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             cpu_instance.halt_signal = 1
             self.logger.error("MemOverflowErr %s" % e)
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]
@@ -250,12 +258,15 @@ class KeyboardButton(QWidget):
     def on_click(self):
         global cpu_instance
         try:
+            value = self.button_name
             if self.button_name == "enter":
                 cpu_instance.keyboard_input_action("\r")
                 # TODO remove
                 # logging.getLogger("output2").debug("\r")
             else:
-                cpu_instance.keyboard_input_action(self.button_name)
+                if ord(value) <= ord("Z") and ord(value) >= ord("A"):
+                    value = (chr(ord(value)+32))
+                cpu_instance.keyboard_input_action(value)
                 # logging.getLogger("output2").debug(self.button_name)
 
             signal_list["RUN"].setStyleSheet("background-color:rgb(255,0,0)")
@@ -267,26 +278,34 @@ class KeyboardButton(QWidget):
             elif cpu_instance.run_mode == 0:
                 self.single_step_run()
             else:
-                self.logger.debug("illegal input %s detected" % self.button_name)
+                self.logger.debug("illegal input %s detected" % value)
             # set run off
             signal_list["RUN"].setStyleSheet("background-color:rgb(0,0,0)")
             refresh_all(reg_list, cpu_instance.get_all_reg())
         except MemReserveErr as e:
+            cpu_instance.trigger_mfr(0)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             self.logger.error("MemReserveErr %s" % (e))
             cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_mem_reserve]
             return
         except TrapErr as e:
+            cpu_instance.trigger_mfr(1)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             self.logger.error("TrapErr %s" % (e))
             cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_trap]
             return
         except OpCodeErr as e:
+            cpu_instance.trigger_mfr(2)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             self.logger.error("OpCodeErr %s" % (e))
             cpu_instance.halt_signal = 1
             # self.mfr = mapping_mfr_value[mfr_op_code]
             return
         except MemOverflowErr as e:
+            cpu_instance.trigger_mfr(3)
+            refresh_all(reg_list, cpu_instance.get_all_reg())
             cpu_instance.halt_signal = 1
             self.logger.error("MemOverflowErr %s" % (e))
             # self.mfr = mapping_mfr_value[mfr_mem_overflow]

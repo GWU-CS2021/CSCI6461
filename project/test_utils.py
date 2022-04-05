@@ -1,8 +1,4 @@
-def load_file( file_path="paragraph.txt"):
-    with open(file_path, "r+") as p_reader:
-        tmp_string = p_reader.read()
-        for char in tmp_string:
-            print(char,ord(char))
+from src.cpu import CPU
 
-
-load_file()
+instance = CPU()
+instance.trigger_mfr(1)
