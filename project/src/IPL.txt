@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Program starts at 0x100
 0100 0514 # Load R1 at 0x14
 0101 090C # STR R1 to 0xC

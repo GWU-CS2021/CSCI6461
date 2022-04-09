@@ -1,6 +1,1 @@
-123456789
-987654321
-abc def ghi jkl
-mno qwe rty uio
-plk jhg fds
-azx cvb nm
+abc def ghi jkl. mno qwe rty uio. plk jhg fds. azx cvb nm.
