@@ -43,9 +43,12 @@ class ROB:
         index = 0
         while index < 8:
             curr_ir = memory[pc+index]
-            if curr_ir.get_op_code() == "00000":
+            command = self._get_name_by_op(curr_ir)
+            if command in ["jz", "jne", "jcc", "sob", "jge"]:
                 break
-            self.buffer[index] = ROBLine(self._get_name_by_op(curr_ir), "")
+            self.buffer[index] = ROBLine(command, "")
+            if command == "hlt":
+                break
             index += 1
 
     def change_status(self,status=""):
@@ -58,7 +61,7 @@ class ROB:
         # opcode from binary string to oct string
         # op_oct = format(int(op, 2), "02o")
         mapping_op_function = {
-            "00": "",
+            "00": "hlt",
             "01": "ldr",
             "02": "str",
             "03": "lda",
