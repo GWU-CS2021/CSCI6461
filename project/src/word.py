@@ -26,9 +26,12 @@ class Word(int):
     def convert_to_binary(self):
         return format(self.value, "016b")
 
+    def convert_to_hex(self):
+        return format(self.value, "04x")
+
     # TODO implement in part IV
     def convert_to_float(self):
-        pass
+        return float(self.value)
 
     def validate(self, value):
         if value > self.max:
@@ -79,7 +82,7 @@ class Word(int):
     # for opcode_8 in [61,62,63]
     def parse_as_io_cmd(self):
         binary_word = self.convert_to_binary()
-        r, dev_id = binary_word[6:7], binary_word[11:15]
+        r, dev_id = binary_word[6:8], binary_word[11:16]
         return r, dev_id
 
     # for opcode_8 in [33,34,35,36,37,50,51]
