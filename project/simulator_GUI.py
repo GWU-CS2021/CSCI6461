@@ -46,6 +46,11 @@ reg_list = {}
 signal_list = {}
 # ca
 cache_list = {}
+# rob
+rob_list = {}
+# bpb
+bpb_list = {}
+
 
 
 # create register creator class
@@ -402,7 +407,8 @@ class SimulatorGUI(QWidget):
         self.init_output_box()
         self.init_logbox()
         self.init_keyboard()
-        self.setGeometry(240, 200, 1600, 900)
+        self.init_bpb_indicator()
+        self.setGeometry(10, 100, 1900, 900)
         self.show()
         global reg_list
         global cpu_instance
@@ -418,7 +424,7 @@ class SimulatorGUI(QWidget):
         logging.getLogger("output2").setLevel(logging.DEBUG)
         logging.getLogger("output2").addHandler(log_text_box)
         log_text_box.widget.setGeometry(10, 20, 300, 470)
-        output_box.setGeometry(1250, 50, 320, 500)
+        output_box.setGeometry(1550, 50, 320, 500)
 
     def init_logbox(self):
         # init debug logging
@@ -430,7 +436,7 @@ class SimulatorGUI(QWidget):
         logging.getLogger("cpu").addHandler(log_text_box)
         # You can control the logging level
         log_text_box.widget.setGeometry(10, 20, 300, 270)
-        log_box.setGeometry(1250, 550, 320, 300)
+        log_box.setGeometry(1550, 550, 320, 300)
 
     # init run and halt signal light
     def init_signal_ui(self):
@@ -517,6 +523,58 @@ class SimulatorGUI(QWidget):
             keyboard_button[key].move(b_property[0], b_property[1])
         keyboard_box.setGeometry(20, 550, 600, 300)
 
+    def init_bpb_indicator(self):
+        # init cache indicator here
+        cache_box = QtWidgets.QGroupBox("Branch Prediction Buffer", self)
+        self.tableWidget_0 = QTableWidget(cache_box)
+        self.tableWidget_0.setRowCount(16)
+        self.tableWidget_0.setColumnCount(2)
+        self.tableWidget_0.setGeometry(10, 15, 250, 510)
+        self.tableWidget_0.setHorizontalHeaderItem(0, QTableWidgetItem("Address"))
+        self.tableWidget_0.setHorizontalHeaderItem(1, QTableWidgetItem("Predict"))
+        header = self.tableWidget_0.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        self.tableWidget_0.verticalHeader().setStretchLastSection(True)
+        self.tableWidget_0.verticalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch)
+        self.tableWidget_1 = QTableWidget(cache_box)
+        self.tableWidget_1.setRowCount(8)
+        self.tableWidget_1.setColumnCount(2)
+        self.tableWidget_1.setGeometry(10, 530, 250, 270)
+        self.tableWidget_1.setHorizontalHeaderItem(0, QTableWidgetItem("Command"))
+        self.tableWidget_1.setHorizontalHeaderItem(1, QTableWidgetItem("Status"))
+        header = self.tableWidget_1.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        self.tableWidget_1.verticalHeader().setStretchLastSection(True)
+        self.tableWidget_1.verticalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch)
+        global cpu_instance, cache_list,bpb_list,rob_list
+        index = 0
+        for _ in cpu_instance.bpb.buffer:
+            bpb_list["Address" + str(index)] = QTableWidgetItem("0000000000000000")
+            bpb_list["Predict" + str(index)] = QTableWidgetItem("0")
+
+            self.tableWidget_0.setVerticalHeaderItem(index, QTableWidgetItem(str(index)))
+            self.tableWidget_0.setItem(index, 0, bpb_list["Address" + str(index)])
+            self.tableWidget_0.setItem(index, 1, bpb_list["Predict" + str(index)])
+
+            index += 1
+        index = 0
+        for _ in cpu_instance.bpb.rob.buffer:
+            rob_list["Command" + str(index)] = QTableWidgetItem("")
+            rob_list["Status" + str(index)] = QTableWidgetItem("")
+
+            self.tableWidget_1.setVerticalHeaderItem(index, QTableWidgetItem(str(index)))
+            self.tableWidget_1.setItem(index, 0, rob_list["Command" + str(index)])
+            self.tableWidget_1.setItem(index, 1, rob_list["Status" + str(index)])
+
+            index += 1
+
+        # cache_list["address3"].setBackground(QtGui.QColor(100,100,150))
+        cache_box.setGeometry(1250, 50, 270, 800)
+
     def init_cache_indicator(self):
         # init cache indicator here
         cache_box = QtWidgets.QGroupBox("cache", self)
@@ -563,7 +621,7 @@ class SimulatorGUI(QWidget):
         # cache_list["address3"].setBackground(QtGui.QColor(100,100,150))
         cache_box.setGeometry(640, 550, 600, 300)
 
-    # interactive run to refresh and run one command every 1 second
+    # interactive run to refresh and run one command every 0.01 second
 
     def load_file(self):
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Single File', "", '')
@@ -685,6 +743,42 @@ def refresh_cache():
             cache_list["value" + str(index)].setBackground(QtGui.QColor(255, 255, 255))
             cache_list["address" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(0, 0, 0)))
             cache_list["value" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(0, 0, 0)))
+        index += 1
+
+    index = 0
+    for rob_line in cpu_instance.bpb.rob.buffer:
+        rob_list["Command" + str(index)].setText(rob_line.command)
+        rob_list["Status" + str(index)].setText(rob_line.status)
+        index += 1
+
+    index = 0
+    for bpb_line in cpu_instance.bpb.buffer:
+        predict = str(bpb_line.value)
+        if cpu_instance.cache_display == 10:
+            address = str(bpb_line.addr)
+        elif cpu_instance.cache_display == 16:
+            address = bpb_line.addr.convert_to_hex()
+        else:
+            address = bpb_line.addr.convert_to_binary()
+        bpb_list["Address" + str(index)].setText(address)
+        bpb_list["Predict" + str(index)].setText(predict)
+        bpb_list["Address" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
+        bpb_list["Predict" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(255, 255, 255)))
+        if cpu_instance.bpb.cache_update_at == index:
+            bpb_list["Address" + str(index)].setBackground(QtGui.QColor(0, 0, 128))
+            bpb_list["Predict" + str(index)].setBackground(QtGui.QColor(0, 0, 128))
+        elif cpu_instance.bpb.cache_hit_at == index:
+            bpb_list["Address" + str(index)].setBackground(QtGui.QColor(0, 128, 0))
+            bpb_list["Predict" + str(index)].setBackground(QtGui.QColor(0, 128, 0))
+
+        elif cpu_instance.bpb.cache_replace_at == index:
+            bpb_list["Address" + str(index)].setBackground(QtGui.QColor(128, 0, 0))
+            bpb_list["Predict" + str(index)].setBackground(QtGui.QColor(128, 0, 0))
+        else:
+            bpb_list["Address" + str(index)].setBackground(QtGui.QColor(255, 255, 255))
+            bpb_list["Predict" + str(index)].setBackground(QtGui.QColor(255, 255, 255))
+            bpb_list["Address" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(0, 0, 0)))
+            bpb_list["Predict" + str(index)].setForeground(QtGui.QBrush(QtGui.QColor(0, 0, 0)))
         index += 1
 
 

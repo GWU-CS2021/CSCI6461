@@ -39,17 +39,19 @@ class Memory:
     def _malloc_cache_index(self):
         index = 0
         oldest_timestamp = datetime.datetime.now()
-        available_index = 0
+        available_index = -1
+        needpop = 1
         for cache_line in self.cache:
             if cache_line.addr == Word(0):
                 # already malloc
                 available_index = index
+                needpop = 0
                 break
             if cache_line.last_update < oldest_timestamp:
                 oldest_timestamp = cache_line.last_update
                 available_index = index
             index += 1
-        if available_index != -1:
+        if needpop:
             # remove old entry
             self.cache_map.pop(self.cache[available_index].addr, None)
         return available_index

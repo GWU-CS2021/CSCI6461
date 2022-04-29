@@ -2,6 +2,8 @@ import logging
 from .register import Register
 from .memory import Memory
 from .mfr import *
+from .cache import BPB
+import traceback
 
 
 class CPU:
@@ -30,6 +32,8 @@ class CPU:
         # cache_display =0 -> dec output cache
         # 16 -> hex output cache, 2->binary output cache
         self.cache_display = 2
+        # init branch prediction buffer
+        self.bpb = BPB()
 
     def trigger_mfr(self, mfr_type):
         map_type_word = {0:Word(1),1:Word(2),2:Word(4),3:Word(8)}
@@ -71,6 +75,7 @@ class CPU:
         self.ir.reset()
         self.halt_signal = 0
         self.input_signal = -1
+        self.bpb.reset()
         self.memory.init_program()
 
     def load_file(self,file_path):
@@ -133,6 +138,7 @@ class CPU:
         except Exception as e:
             self.halt_signal = 1
             self.logger.error(e)
+            self.logger.error(traceback.format_exc())
             return
 
     def store(self):
@@ -339,37 +345,52 @@ class CPU:
         r, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         self.logger.debug("jz %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
+        self.bpb.predict(self.pc.get(),effective_addr,self.memory.memory)
         if self.gpr[int(r, 2)].get() == 0:
+            self.bpb.validate(self.pc.get(), 1)
             self.pc.set(effective_addr)
             self.logger.debug("jz jumping to %s" % effective_addr)
+
         else:
+            self.bpb.validate(self.pc.get(), 0)
             self.pc.add(1)
             self.logger.debug("jz no jump")
+
         return
 
     def _jne(self):
         r, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         self.logger.debug("jne %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
+        self.bpb.predict(self.pc.get(), effective_addr, self.memory.memory)
         if self.gpr[int(r, 2)].get() != 0:
+            self.bpb.validate(self.pc.get(), 1)
             self.pc.set(effective_addr)
             self.logger.debug("jne jumping to %s" % effective_addr)
+
         else:
+            self.bpb.validate(self.pc.get(), 0)
             self.pc.add(1)
             self.logger.debug("jne no jump")
+
         return
 
     def _jcc(self):
         cc, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         self.logger.debug("jcc %s,%s,%s[%s] %s:%s" % (cc, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
+        self.bpb.predict(self.pc.get(), effective_addr, self.memory.memory)
         if self.cc.get().convert_to_binary()[12 + int(cc, 2)] != "0":
+            self.bpb.validate(self.pc.get(), 1)
             self.pc.set(effective_addr)
             self.logger.debug("jcc jumping to %s, with cc value %s" % (
                 effective_addr.convert_to_hex(), self.cc.get().convert_to_binary()))
+
         else:
+            self.bpb.validate(self.pc.get(), 0)
             self.pc.add(1)
             self.logger.debug("jcc no jump")
+
         return
 
     def _jma(self):
@@ -400,25 +421,35 @@ class CPU:
         effective_addr = self._get_effective_address(ix, i, addr)
         self.logger.debug("sob %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
         self.gpr[int(r, 2)].add(-1)
+        self.bpb.predict(self.pc.get(), effective_addr, self.memory.memory)
         if self.gpr[int(r, 2)].get() > 0:
+            self.bpb.validate(self.pc.get(), 1)
             self.pc.set(effective_addr)
             self.logger.debug("sob jumping to %s" % effective_addr.convert_to_hex())
+
         else:
             # reg == 0
+            self.bpb.validate(self.pc.get(), 0)
             self.pc.add(1)
             self.logger.debug("sob no jump")
+
         return
 
     def _jge(self):
         r, ix, i, addr = self.ir.get().parse_as_transfer_cmd()
         effective_addr = self._get_effective_address(ix, i, addr)
         self.logger.debug("jge %s,%s,%s[%s] %s:%s" % (r, ix, addr, i, "effective:", effective_addr.convert_to_hex()))
+        self.bpb.predict(self.pc.get(), effective_addr, self.memory.memory)
         if self.gpr[int(r, 2)].get() >= 0:
+            self.bpb.validate(self.pc.get(), 1)
             self.pc.set(effective_addr)
             self.logger.debug("jge jumping to %s" % effective_addr.convert_to_hex())
+
         else:
+            self.bpb.validate(self.pc.get(), 0)
             self.pc.add(1)
             self.logger.debug("jge no jump")
+
         return
 
     def _amr(self):
